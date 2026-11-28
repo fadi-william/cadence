@@ -1,0 +1,54 @@
+name: Website
+
+# Builds apps/site (landing page + docs rendered from docs/guide) and publishes it to GitHub Pages.
+# One-time setup: repository Settings → Pages → Source: "GitHub Actions".
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/site/**"
+      - "docs/**"
+      - "packages/ui-theme/**"
+      - "apps/web/public/logo.svg"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # The site is served from the root of a custom domain (PAGES_DOMAIN). Without a custom domain,
+      # GitHub serves project sites under /<repository-name>/: set the PAGES_BASE_HREF repository
+      # variable to "/<repository-name>/" in that case.
+      - run: npm run build:pages -w @cadence/site
+        env:
+          PAGES_BASE_HREF: ${{ vars.PAGES_BASE_HREF || '/' }}
+          PAGES_DOMAIN: ${{ vars.PAGES_DOMAIN || 'cadence.fadiwilliam.com' }}
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: apps/site/dist/site/browser
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

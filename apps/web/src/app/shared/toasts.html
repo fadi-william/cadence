@@ -1,0 +1,24 @@
+<div
+  class="toast toast-end toast-bottom z-[100] mb-[calc(6rem+env(safe-area-inset-bottom))] lg:mb-0"
+  aria-live="polite"
+>
+  @for (t of toasts.toasts(); track t.id) {
+    <div
+      role="alert"
+      class="alert rounded-full py-2 pl-3 pr-2 shadow-xl"
+      [class.alert-success]="t.kind === 'success'"
+      [class.alert-error]="t.kind === 'error'"
+      [class.alert-info]="t.kind === 'info'"
+    >
+      <app-icon class="text-white" [name]="t.kind === 'error' ? 'x' : 'check'" [size]="16" />
+      <span class="max-w-xs text-sm font-medium">{{ t.text }}</span>
+      <button
+        class="btn btn-circle btn-ghost btn-xs text-white"
+        (click)="toasts.dismiss(t.id)"
+        aria-label="Dismiss"
+      >
+        ✕
+      </button>
+    </div>
+  }
+</div>

@@ -1,0 +1,10 @@
+{
+  "name": "@cadence/ui-theme",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Cadence wine theme for Tailwind CSS 4 + daisyUI 5, shared by apps/web and apps/site",
+  "files": [
+    "cadence.css"
+  ],
+  "license": "Apache-2.0"
+}

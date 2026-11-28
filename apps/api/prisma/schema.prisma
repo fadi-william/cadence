@@ -1,0 +1,310 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  ADMIN
+  TRIBE_LEAD
+  ENGINEERING_MANAGER
+}
+
+enum IntegrationProvider {
+  JIRA
+  AZURE_DEVOPS
+}
+
+/// Kind of data a connection can sync; a connection syncs only the kinds in its `features`.
+enum IntegrationKind {
+  WORK_TRACKING
+  SOURCE_CONTROL
+  DEPLOYMENTS
+}
+
+enum SyncStatus {
+  QUEUED
+  RUNNING
+  SUCCESS
+  FAILED
+}
+
+enum DeploymentStatus {
+  SUCCESS
+  FAILED
+}
+
+/// A person who can sign in: Admin, Tribe Lead or Engineering Manager.
+/// Hierarchy: ENGINEERING_MANAGER.reportsTo -> TRIBE_LEAD.reportsTo -> ADMIN
+model User {
+  id                String               @id @default(cuid())
+  email             String               @unique
+  name              String
+  role              UserRole
+  /// Null until the password is set (used for the first-launch admin).
+  passwordHash      String?
+  tribeName         String?
+  isSystem          Boolean              @default(false)
+  reportsToId       String?
+  reportsTo         User?                @relation("Reporting", fields: [reportsToId], references: [id], onDelete: Restrict)
+  reports           User[]               @relation("Reporting")
+  members           Member[]
+  services          DeliveryService[]
+  refreshTokens     RefreshToken[]
+  resetTokens       PasswordResetToken[] @relation("ResetTokenUser")
+  auditLogs         AuditLog[]
+  passwordChangedAt DateTime?
+  lastLoginAt       DateTime?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+
+  @@index([role])
+  @@index([reportsToId])
+}
+
+/// An engineer whose activity is tracked. Belongs to one Engineering Manager.
+model Member {
+  id           String                @id @default(cuid())
+  name         String
+  email        String?
+  title        String?
+  managerId    String
+  manager      User                  @relation(fields: [managerId], references: [id], onDelete: Restrict)
+  identities   ExternalIdentity[]
+  dailyMetrics DailyMetric[]
+  workItems    WorkItemContributor[]
+  reviewedPrs  ReviewedPullRequest[]
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+
+  @@index([managerId])
+}
+
+/// A configured connection to an external platform (one Jira site, one ADO organisation, ...).
+model IntegrationConnection {
+  id                     String              @id @default(cuid())
+  name                   String
+  provider               IntegrationProvider
+  baseUrl                String
+  /// Provider-specific, non-secret settings (e.g. storyPointsField, projects[]).
+  config                 Json                @default("{}")
+  /// AES-256-GCM encrypted credential (API token / PAT). Never returned by the API.
+  encryptedSecret        String
+  /// AES-256-GCM encrypted secret used to verify inbound webhooks.
+  encryptedWebhookSecret String?
+  enabled                Boolean             @default(true)
+  /// Capabilities this connection syncs; a subset of what its adapter supports. Turning one off keeps or
+  /// removes its collected data, as chosen at the time.
+  features               IntegrationKind[]
+  identities             ExternalIdentity[]
+  dailyMetrics           DailyMetric[]
+  workItems              WorkItem[]
+  reviewedPullRequests   ReviewedPullRequest[]
+  syncRuns               SyncRun[]
+  services               DeliveryService[]
+  createdAt              DateTime            @default(now())
+  updatedAt              DateTime            @updatedAt
+}
+
+/// Links a Member to their username / account id on a given connection.
+model ExternalIdentity {
+  id           String                @id @default(cuid())
+  memberId     String
+  member       Member                @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  connectionId String
+  connection   IntegrationConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  /// Jira accountId/username, Azure DevOps uniqueName (usually e-mail).
+  username     String
+  displayName  String?
+  /// Provider-side immutable id when resolved (e.g. ADO identity GUID).
+  externalId   String?
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+
+  @@unique([memberId, connectionId])
+  @@unique([connectionId, username])
+}
+
+/// One row per member, per connection, per day. Written idempotently by sync.
+model DailyMetric {
+  id                    String                @id @default(cuid())
+  memberId              String
+  member                Member                @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  connectionId          String
+  connection            IntegrationConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  date                  DateTime              @db.Date
+  // Source control
+  commits               Int                   @default(0)
+  prsRaised             Int                   @default(0)
+  prsReviewed           Int                   @default(0)
+  prsMerged             Int                   @default(0)
+  // Work tracking
+  issuesCompleted       Int                   @default(0)
+  storyPoints           Float                 @default(0)
+  cycleTimeHoursSum     Float                 @default(0)
+  cycleTimeSamples      Int                   @default(0)
+  // Work tracking: assignments (periods one person held an item; see docs/guide/metrics.md)
+  assignmentsCompleted  Int                   @default(0)
+  assignmentsHandedOver Int                   @default(0)
+  assignmentsReworked   Int                   @default(0)
+  holdHoursSum          Float                 @default(0)
+  holdSamples           Int                   @default(0)
+  updatedAt             DateTime              @updatedAt
+
+  @@unique([memberId, connectionId, date])
+  @@index([date])
+}
+
+/// A completed work item (e.g. a resolved Jira issue) and everyone who held it. Every contributor is
+/// credited with it in their own DailyMetric; team and tribe totals count each item once from here.
+model WorkItem {
+  id             String                @id @default(cuid())
+  connectionId   String
+  connection     IntegrationConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  key            String
+  /// UTC day the item was completed.
+  date           DateTime              @db.Date
+  storyPoints    Float                 @default(0)
+  cycleTimeHours Float?
+  contributors   WorkItemContributor[]
+
+  @@unique([connectionId, key])
+  @@index([date])
+}
+
+model WorkItemContributor {
+  workItemId String
+  workItem   WorkItem @relation(fields: [workItemId], references: [id], onDelete: Cascade)
+  memberId   String
+  member     Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@id([workItemId, memberId])
+  @@index([memberId])
+}
+
+/// A pull request by a tracked member that got its first review, with how long it waited for it. One row per
+/// PR, so review wait can be reported as a median. Part of the source-control feature.
+model ReviewedPullRequest {
+  id           String                @id @default(cuid())
+  connectionId String
+  connection   IntegrationConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  /// Platform-specific PR key, unique per connection (Azure DevOps: `<repository id>-<pull request id>`).
+  key          String
+  /// The PR's author.
+  memberId     String
+  member       Member                @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  /// UTC day of the first review.
+  date         DateTime              @db.Date
+  /// Hours from the PR being opened (or published, for drafts) to its first review.
+  waitHours    Float
+
+  @@unique([connectionId, key])
+  @@index([date])
+  @@index([memberId])
+}
+
+model SyncRun {
+  id             String                @id @default(cuid())
+  connectionId   String
+  connection     IntegrationConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  status         SyncStatus            @default(RUNNING)
+  /// manual | schedule | webhook
+  trigger        String                @default("manual")
+  rangeFrom      DateTime              @db.Date
+  rangeTo        DateTime              @db.Date
+  recordsWritten Int                   @default(0)
+  error          String?
+  startedAt      DateTime              @default(now())
+  finishedAt     DateTime?
+
+  @@index([connectionId, startedAt])
+}
+
+/// Rotating refresh tokens (stored hashed). Reuse of a revoked token revokes its whole family.
+model RefreshToken {
+  id           String    @id @default(cuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash    String    @unique
+  familyId     String
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  replacedById String?
+  userAgent    String?
+  createdAt    DateTime  @default(now())
+
+  @@index([userId])
+  @@index([familyId])
+}
+
+model PasswordResetToken {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation("ResetTokenUser", fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash   String    @unique
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdById String?
+  createdAt   DateTime  @default(now())
+
+  @@index([userId])
+}
+
+/// Small key/value store for instance-wide settings (e.g. the hashed setup token).
+model AppSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  actor      User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  actorEmail String?
+  action     String
+  entityType String
+  entityId   String?
+  metadata   Json?
+  ip         String?
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([entityType, entityId])
+}
+
+/// A deployable unit discovered from a CI/CD source (pipeline, repo). Owned by a team for DORA roll-ups.
+model DeliveryService {
+  id           String                @id @default(cuid())
+  connectionId String
+  connection   IntegrationConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  name         String
+  managerId    String?
+  manager      User?                 @relation(fields: [managerId], references: [id], onDelete: SetNull)
+  deployments  Deployment[]
+  createdAt    DateTime              @default(now())
+
+  @@unique([connectionId, name])
+  @@index([managerId])
+}
+
+model Deployment {
+  id            String           @id @default(cuid())
+  serviceId     String
+  service       DeliveryService  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  externalId    String
+  environment   String
+  status        DeploymentStatus
+  startedAt     DateTime?
+  finishedAt    DateTime
+  /// Hours from first commit of the change to production deploy.
+  leadTimeHours Float?
+  createdAt     DateTime         @default(now())
+
+  @@unique([serviceId, externalId])
+  @@index([finishedAt])
+}

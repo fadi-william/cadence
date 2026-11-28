@@ -1,0 +1,60 @@
+<div class="mx-auto grid max-w-7xl gap-10 page-gutter py-14 md:grid-cols-[2fr_1fr_1fr_1fr]">
+  <div class="max-w-xs">
+    <app-logo [size]="36" />
+    <p class="mt-4 text-sm opacity-70">
+      Open-source engineering insights. Jira and Azure DevOps, merged per person, team and tribe.
+    </p>
+  </div>
+  <div>
+    <h3 class="mb-3 text-sm font-bold">Product</h3>
+    <ul class="space-y-2 text-sm opacity-75">
+      <li><a routerLink="/" fragment="features" class="link link-hover">Features</a></li>
+      <li>
+        <a routerLink="/" fragment="how-it-works" class="link link-hover">How it works</a>
+      </li>
+      <li><a routerLink="/" fragment="privacy" class="link link-hover">Privacy</a></li>
+    </ul>
+  </div>
+  <div>
+    <h3 class="mb-3 text-sm font-bold">Docs</h3>
+    <ul class="space-y-2 text-sm opacity-75">
+      @for (g of guides; track g.slug) {
+        <li>
+          <a [routerLink]="['/docs', g.slug]" class="link link-hover">{{ g.title }}</a>
+        </li>
+      }
+    </ul>
+  </div>
+  <div>
+    <h3 class="mb-3 text-sm font-bold">Project</h3>
+    <ul class="space-y-2 text-sm opacity-75">
+      <li>
+        <a [href]="repo" target="_blank" rel="noopener" class="link link-hover"
+          >GitHub repository</a
+        >
+      </li>
+      <li>
+        <a [href]="repo + '/issues'" target="_blank" rel="noopener" class="link link-hover"
+          >Report an issue</a
+        >
+      </li>
+      <li>
+        <a
+          [href]="blob + '/docs/ARCHITECTURE.md'"
+          target="_blank"
+          rel="noopener"
+          class="link link-hover"
+          >Architecture</a
+        >
+      </li>
+    </ul>
+  </div>
+</div>
+<div class="border-t border-base-content/10">
+  <p class="mx-auto max-w-7xl page-gutter py-6 text-xs opacity-60">
+    Cadence is open source under the
+    <a class="link link-hover" [href]="blob + '/LICENSE'" target="_blank" rel="noopener"
+      >Apache License 2.0</a
+    >. Built with Angular, NestJS, Prisma and daisyUI.
+  </p>
+</div>

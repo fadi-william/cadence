@@ -1,0 +1,139 @@
+<a routerLink="/members" class="btn btn-ghost btn-sm mb-3 gap-1 rounded-full"
+  ><app-icon name="chevronLeft" [size]="16" /> People</a
+>
+
+@if (member.value(); as m) {
+  <section class="surface mb-6 overflow-hidden">
+    <div class="bg-wine relative h-28 sm:h-36"><app-brand-arcs [size]="340" /></div>
+    <div
+      class="flex flex-col gap-4 px-5 pb-5 sm:flex-row sm:items-start sm:justify-between sm:px-8"
+    >
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-5">
+        <div class="-mt-12 w-fit rounded-full ring-4 ring-base-100">
+          <app-avatar [name]="m.name" [size]="96" />
+        </div>
+        <div class="sm:pt-3">
+          <h1 class="text-2xl font-extrabold tracking-tight sm:text-3xl">{{ m.name }}</h1>
+          <p class="text-sm opacity-70">
+            {{ m.title || 'Engineer' }} · reports to {{ m.manager?.name }}
+          </p>
+          <div class="mt-2 flex flex-wrap gap-1.5">
+            @for (i of m.identities; track i.id) {
+              <span
+                class="badge badge-soft gap-1.5 rounded-full"
+                [class]="i.provider === 'JIRA' ? 'badge-info' : 'badge-primary'"
+              >
+                <app-provider-icon [provider]="i.provider" [size]="13" /> {{ i.username }}
+              </span>
+            } @empty {
+              <span class="badge badge-warning badge-soft rounded-full"
+                >No linked identities yet</span
+              >
+            }
+          </div>
+        </div>
+      </div>
+      <div class="sm:pt-4"><app-date-range [(range)]="range" /></div>
+    </div>
+  </section>
+}
+
+@if (metrics.value(); as mt) {
+  <div class="mb-6" [class]="tileGrid">
+    @for (k of kpis(); track k.label) {
+      <app-stat-card
+        [class]="tileSpan($index, $count)"
+        [label]="k.label"
+        [value]="k.value"
+        [icon]="k.icon"
+        [color]="k.color"
+        [hint]="k.hint"
+        [current]="k.current"
+        [previous]="k.previous"
+        [invert]="k.invert"
+        [series]="k.series"
+      />
+    }
+  </div>
+
+  <div class="mb-6 grid gap-4 xl:grid-cols-3">
+    <section class="surface p-5 xl:col-span-2">
+      <div class="mb-1 flex flex-wrap items-center justify-between gap-2">
+        <h2 class="text-lg font-bold">Combined timeline</h2>
+        <div class="flex gap-1.5">
+          <span class="badge badge-primary badge-soft gap-1 rounded-full"
+            ><app-provider-icon provider="AZURE_DEVOPS" [size]="12" /> code</span
+          >
+          <span class="badge badge-info badge-soft gap-1 rounded-full"
+            ><app-provider-icon provider="JIRA" [size]="12" /> issues</span
+          >
+        </div>
+      </div>
+      <app-chart [spec]="timeline()" [height]="280" label="Combined daily timeline" />
+    </section>
+
+    <section class="surface p-5">
+      <h2 class="text-lg font-bold">Where the work happens</h2>
+      <p class="mb-4 text-sm opacity-60">Share of combined activity by platform</p>
+      @if (sources().length) {
+        <div class="mb-5 flex h-3 overflow-hidden rounded-full bg-base-200">
+          @for (s of sources(); track s.connectionId) {
+            <div
+              [style.width.%]="s.share"
+              [class]="s.provider === 'JIRA' ? 'bg-info' : 'bg-primary'"
+              [title]="s.connectionName + ' ' + s.share + '%'"
+            ></div>
+          }
+        </div>
+        <div class="flex flex-col gap-3">
+          @for (s of sources(); track s.connectionId) {
+            <div class="rounded-box border border-base-300 p-4">
+              <div class="mb-3 flex items-center gap-2">
+                <app-provider-icon [provider]="s.provider" [size]="20" />
+                <div class="min-w-0 flex-1">
+                  <div class="truncate font-semibold">{{ labels[s.provider] }}</div>
+                  <div class="truncate text-xs opacity-60">
+                    {{ s.username ?? 'not linked' }} · {{ s.connectionName }}
+                  </div>
+                </div>
+                <span class="text-sm font-bold">{{ s.share }}%</span>
+              </div>
+              <div class="grid grid-cols-3 gap-2 text-center">
+                @for (n of s.numbers; track n.label) {
+                  <div class="rounded-field bg-base-200 py-2">
+                    <div class="font-extrabold">{{ n.value }}</div>
+                    <div class="text-[11px] opacity-60">{{ n.label }}</div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <p class="text-sm opacity-60">
+          Link this person’s Azure DevOps and Jira accounts to merge their activity here.
+        </p>
+      }
+    </section>
+  </div>
+} @else if (metrics.isLoading()) {
+  <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    @for (i of [1, 2, 3, 4]; track i) {
+      <div class="skeleton h-36 rounded-box"></div>
+    }
+  </div>
+}
+
+<section class="surface p-5">
+  <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+    <h2 class="text-lg font-bold">Activity calendar</h2>
+    <span class="text-sm opacity-60"
+      >Last 6 months · commits, PRs, reviews and issues combined</span
+    >
+  </div>
+  @if (calendar(); as days) {
+    <app-activity-calendar [days]="days" />
+  } @else {
+    <div class="skeleton h-32 w-full rounded-box"></div>
+  }
+</section>

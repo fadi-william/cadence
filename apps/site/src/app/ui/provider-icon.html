@@ -1,0 +1,25 @@
+@switch (provider()) {
+  @case ('AZURE_DEVOPS') {
+    <svg [attr.width]="size()" [attr.height]="size()" viewBox="0 0 24 24">
+      <path
+        fill="#0078D4"
+        d="M22 5.6v12.2l-5 4.2-7.8-2.8v2.8L4.8 16l12.3 1V6.4zm-4.1.6L11 2v2.8L4.6 6.7 2.6 9.3v5.9l2.7 1.2V8.8z"
+      />
+    </svg>
+  }
+  @case ('JIRA') {
+    <svg [attr.width]="size()" [attr.height]="size()" viewBox="0 0 24 24">
+      <defs>
+        <linearGradient id="jira-a" x1="1" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#0052CC" />
+          <stop offset="1" stop-color="#2684FF" />
+        </linearGradient>
+      </defs>
+      <path
+        fill="#2684FF"
+        d="M22.2 11.4 12.6 1.8 11.7.9 4.5 8.1 1.8 10.8a.9.9 0 0 0 0 1.3l6.6 6.6 3.9 3.9 7.2-7.2.1-.1 3-3a.9.9 0 0 0 0-1.3zM12.3 15.4 9 12l3.3-3.3 3.3 3.3z"
+      />
+      <path fill="url(#jira-a)" d="M12.3 8.7A5.6 5.6 0 0 1 12.3.8L5.1 8l3.9 3.9z" />
+    </svg>
+  }
+}

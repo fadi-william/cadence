@@ -1,0 +1,89 @@
+<app-auth-layout tagline="Let’s get your workspace ready.">
+  <ul class="steps mb-6 w-full text-xs">
+    <li class="step step-primary">Admin profile</li>
+    <li class="step">Teams</li>
+    <li class="step">Integrations</li>
+  </ul>
+  <h1 class="text-2xl font-extrabold tracking-tight">Welcome to Cadence</h1>
+  <p class="mb-5 text-sm opacity-70">
+    A default admin profile was created on first launch. Secure it to continue.
+  </p>
+
+  @if (error()) {
+    <div role="alert" class="alert alert-error alert-soft mb-4 text-sm">{{ error() }}</div>
+  }
+
+  <form class="flex flex-col gap-1" (submit)="onSubmit($event)" novalidate>
+    <app-field label="Display name" [field]="f.name">
+      <label class="input w-full" [class.input-error]="invalid(f.name)">
+        <app-icon name="user" [size]="16" class="opacity-50" />
+        <input placeholder="Your name" autocomplete="name" [formField]="f.name" />
+      </label>
+    </app-field>
+    <app-field label="Admin e-mail" [field]="f.email">
+      <label class="input w-full" [class.input-error]="invalid(f.email)">
+        <app-icon name="mail" [size]="16" class="opacity-50" />
+        <input
+          type="email"
+          placeholder="admin@cadence.local"
+          autocomplete="username"
+          [formField]="f.email"
+        />
+      </label>
+    </app-field>
+    <app-field label="Password" [field]="f.password" hint="At least 12 characters">
+      <label class="input w-full" [class.input-error]="invalid(f.password)">
+        <app-icon name="lock" [size]="16" class="opacity-50" />
+        <input
+          type="password"
+          placeholder="Create a password"
+          autocomplete="new-password"
+          [formField]="f.password"
+        />
+      </label>
+    </app-field>
+    <div class="flex items-center gap-3 px-1">
+      <progress
+        class="progress h-1.5 flex-1"
+        [class]="strength().cls"
+        [value]="strength().score"
+        max="4"
+      ></progress>
+      <span class="w-16 text-right text-xs font-medium opacity-70">{{ strength().label }}</span>
+    </div>
+    <app-field label="Confirm password" [field]="f.confirm">
+      <label class="input w-full" [class.input-error]="invalid(f.confirm)">
+        <app-icon name="lock" [size]="16" class="opacity-50" />
+        <input
+          type="password"
+          placeholder="Repeat the password"
+          autocomplete="new-password"
+          [formField]="f.confirm"
+        />
+      </label>
+    </app-field>
+    @if (tokenRequired()) {
+      <app-field
+        label="Setup token"
+        [field]="f.setupToken"
+        hint="Printed in the API log when the server started."
+      >
+        <label class="input w-full" [class.input-error]="invalid(f.setupToken)">
+          <app-icon name="key" [size]="16" class="opacity-50" />
+          <input
+            class="font-mono"
+            placeholder="One-time setup token"
+            autocomplete="off"
+            [formField]="f.setupToken"
+          />
+        </label>
+      </app-field>
+    }
+    <button class="btn btn-primary mt-4 rounded-full" [disabled]="f().submitting()">
+      @if (f().submitting()) {
+        <span class="loading loading-spinner loading-sm"></span>
+      }
+      Complete setup
+    </button>
+  </form>
+</app-auth-layout>

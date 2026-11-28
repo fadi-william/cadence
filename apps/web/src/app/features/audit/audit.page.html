@@ -1,0 +1,89 @@
+<app-page-header
+  heading="Audit log"
+  eyebrow="Administration"
+  subtitle="Who changed what, and when"
+/>
+
+<div class="mb-4 flex flex-wrap gap-2" role="group" aria-label="Filter by entity">
+  @for (f of filters; track f.value) {
+    <button
+      class="btn btn-sm rounded-full"
+      [class.btn-primary]="entityType() === f.value"
+      [class.btn-ghost]="entityType() !== f.value"
+      (click)="filter(f.value)"
+    >
+      {{ f.label }}
+    </button>
+  }
+</div>
+
+<div class="surface overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="table">
+      <thead>
+        <tr class="text-xs uppercase tracking-wide">
+          <th>When</th>
+          <th>Actor</th>
+          <th>Action</th>
+          <th class="hidden md:table-cell">Entity</th>
+          <th class="hidden lg:table-cell">Details</th>
+          <th class="hidden xl:table-cell">IP</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (e of items(); track e.id) {
+          <tr class="hover:bg-base-200/60">
+            <td class="whitespace-nowrap text-xs opacity-70">
+              {{ e.createdAt | date: 'MMM d, HH:mm' }}
+            </td>
+            <td>
+              <div class="flex items-center gap-2">
+                <app-avatar [name]="e.actorEmail ?? 'system'" [size]="28" />
+                <span class="hidden truncate text-sm sm:inline">{{
+                  e.actorEmail ?? 'system'
+                }}</span>
+              </div>
+            </td>
+            <td>
+              <span
+                class="badge badge-sm badge-soft rounded-full font-medium"
+                [class]="tone(e.action)"
+                >{{ e.action }}</span
+              >
+            </td>
+            <td class="hidden text-xs md:table-cell">
+              {{ e.entityType }}
+              @if (e.entityId) {
+                <span class="font-mono opacity-50">{{ e.entityId.slice(-8) }}</span>
+              }
+            </td>
+            <td
+              class="hidden max-w-xs truncate font-mono text-xs opacity-70 lg:table-cell"
+              [title]="e.metadata | json"
+            >
+              {{ e.metadata ? (e.metadata | json) : '' }}
+            </td>
+            <td class="hidden font-mono text-xs opacity-60 xl:table-cell">{{ e.ip }}</td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="6" class="py-10 text-center opacity-70">
+              @if (loading()) {
+                <span class="loading loading-dots text-primary"></span>
+              } @else {
+                No entries
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  @if (cursor()) {
+    <div class="flex justify-center border-t border-base-300 p-4">
+      <button class="btn btn-sm rounded-full" (click)="load()" [disabled]="loading()">
+        Load more
+      </button>
+    </div>
+  }
+</div>

@@ -1,0 +1,133 @@
+<app-page-header
+  heading="Delivery performance"
+  eyebrow="Insights"
+  subtitle="DORA metrics from Azure DevOps production deployments"
+>
+  @if (managers().length > 1) {
+    <select
+      class="select select-sm w-48 rounded-full"
+      aria-label="Team"
+      (change)="team.set($any($event.target).value)"
+    >
+      <option value="">All teams</option>
+      @for (m of managers(); track m.id) {
+        <option [value]="m.id" [selected]="team() === m.id">{{ m.name }}</option>
+      }
+    </select>
+  }
+  <app-date-range [(range)]="range" />
+</app-page-header>
+
+<div class="mb-6" [class]="tileGrid">
+  @for (k of tiles(); track k.label) {
+    <app-dora-tile
+      [class]="tileSpan($index, $count)"
+      [label]="k.label"
+      [value]="k.value"
+      [icon]="k.icon"
+      [rating]="k.rating"
+      [rated]="k.rated"
+      [hint]="k.hint"
+    />
+  } @empty {
+    @for (i of [1, 2, 3, 4, 5]; track i) {
+      <div class="skeleton h-24 rounded-box" [class]="tileSpan($index, $count)"></div>
+    }
+  }
+</div>
+
+<section class="surface mb-6 p-5">
+  <div class="mb-1 flex items-center justify-between">
+    <h2 class="text-lg font-bold">Deployments per day</h2>
+    <div class="flex gap-3 text-xs opacity-70">
+      <span class="flex items-center gap-1"
+        ><span class="status status-success"></span> successful</span
+      >
+      <span class="flex items-center gap-1"><span class="status status-error"></span> failed</span>
+    </div>
+  </div>
+  @if (chart(); as spec) {
+    <app-chart [spec]="spec" [height]="260" label="Deployments per day" />
+  } @else {
+    <div class="skeleton h-60 w-full rounded-box"></div>
+  }
+</section>
+
+<section class="surface overflow-hidden">
+  <div class="flex flex-wrap items-center justify-between gap-2 p-5 pb-3">
+    <h2 class="text-lg font-bold">Services</h2>
+    <span class="text-sm opacity-60">Assign each pipeline to the team that owns it</span>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="table">
+      <thead>
+        <tr class="text-xs uppercase tracking-wide">
+          <th>Service</th>
+          <th>Owning team</th>
+          <th>Deploys</th>
+          <th class="hidden sm:table-cell">Failures</th>
+          <th class="hidden md:table-cell">Median lead time</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (s of summary.value()?.services ?? []; track s.id) {
+          <tr class="hover:bg-base-200/60">
+            <td>
+              <div class="flex items-center gap-3">
+                <div class="icon-bubble size-9 bg-primary/10">
+                  <app-provider-icon provider="AZURE_DEVOPS" [size]="16" />
+                </div>
+                <div class="min-w-0">
+                  <div class="truncate font-semibold">{{ s.name }}</div>
+                  <div class="truncate text-xs opacity-60">{{ s.connectionName }}</div>
+                </div>
+              </div>
+            </td>
+            <td>
+              @if (canAssign()) {
+                <select
+                  class="select select-sm w-44 rounded-full"
+                  [attr.aria-label]="'Owner of ' + s.name"
+                  (change)="assign(s.id, $any($event.target).value)"
+                >
+                  @if (auth.isAdmin()) {
+                    <option value="" [selected]="!s.managerId">Unassigned</option>
+                  }
+                  @for (m of managers(); track m.id) {
+                    <option [value]="m.id" [selected]="s.managerId === m.id">
+                      {{ m.name }}
+                    </option>
+                  }
+                </select>
+              } @else {
+                {{ s.managerName ?? 'Unassigned' }}
+              }
+            </td>
+            <td class="font-semibold">{{ s.deployments }}</td>
+            <td class="hidden sm:table-cell">
+              <span
+                class="badge badge-sm rounded-full"
+                [class]="s.failures ? 'badge-error badge-soft' : 'badge-ghost'"
+                >{{ s.failures }}</span
+              >
+            </td>
+            <td class="hidden md:table-cell">{{ hours(s.leadTimeHoursMedian) }}</td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="5" class="py-10 text-center opacity-70">
+              No services yet.
+              @if (auth.isAdmin()) {
+                Connect Azure DevOps in
+                <a routerLink="/integrations" class="link link-primary">Integrations</a> and run a
+                sync.
+              } @else {
+                Ask an admin to connect Azure DevOps and assign pipelines to your team.
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</section>

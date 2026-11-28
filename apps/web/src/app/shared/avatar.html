@@ -1,0 +1,12 @@
+<div class="avatar avatar-placeholder" [attr.title]="name()">
+  <div
+    class="rounded-full text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.25),0_2px_6px_-2px_rgb(60_10_25/0.45)]"
+    [style.width.px]="size()"
+    [style.height.px]="size()"
+    [style.background]="gradient()"
+  >
+    <span class="font-bold tracking-wide" [style.font-size.px]="size() * 0.36" aria-hidden="true">{{
+      initials()
+    }}</span>
+  </div>
+</div>

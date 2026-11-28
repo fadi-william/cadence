@@ -1,0 +1,106 @@
+<div
+  class="mx-auto grid max-w-7xl grid-cols-[minmax(0,1fr)] gap-6 page-gutter py-6 lg:gap-8 lg:grid-cols-[15rem_minmax(0,1fr)] lg:py-12 xl:grid-cols-[15rem_minmax(0,1fr)_13rem]"
+>
+  <!-- Guide navigation -->
+  <aside class="min-w-0 lg:sticky lg:top-24 lg:self-start" aria-label="Guides">
+    <div class="flex gap-2 overflow-x-auto pb-2 lg:hidden">
+      @for (g of guides; track g.slug) {
+        <a
+          [routerLink]="['/docs', g.slug]"
+          routerLinkActive="!border-primary !bg-primary !text-primary-content"
+          class="btn btn-sm shrink-0 rounded-full border-base-content/15 bg-base-100"
+          >{{ g.title }}</a
+        >
+      }
+    </div>
+    <nav class="hidden lg:-ml-4 lg:block">
+      @for (section of sections; track section) {
+        <p
+          class="mb-2 mt-6 px-4 text-[11px] font-semibold uppercase tracking-widest opacity-50 first:mt-0"
+        >
+          {{ section }}
+        </p>
+        <ul class="flex flex-col gap-1">
+          @for (g of bySection(section); track g.slug) {
+            <li>
+              <a
+                [routerLink]="['/docs', g.slug]"
+                routerLinkActive="!border-primary/50 !bg-base-100 !text-primary"
+                class="flex items-center gap-3 rounded-full border border-transparent px-4 py-2 text-sm font-semibold opacity-85 transition hover:bg-base-100"
+              >
+                <app-icon [name]="g.icon" [size]="16" /> {{ g.title }}
+              </a>
+            </li>
+          }
+        </ul>
+      }
+    </nav>
+  </aside>
+
+  <!-- Content -->
+  <!-- Until the first guide arrives the article keeps the footer below the fold, so it doesn't jump. -->
+  <article class="surface min-w-0 p-5 sm:p-10" [class.min-h-dvh]="!rendered()">
+    @if (!rendered() && doc.isLoading()) {
+      <!-- Only shown when loading is slow, so a fast load doesn't flash a skeleton. -->
+      <div class="reveal-late space-y-4">
+        <div class="skeleton h-10 w-2/3 rounded-box"></div>
+        <div class="skeleton h-4 w-full rounded-box"></div>
+        <div class="skeleton h-4 w-5/6 rounded-box"></div>
+        <div class="skeleton h-40 w-full rounded-box"></div>
+      </div>
+    } @else if (!rendered() && doc.error()) {
+      <h1 class="text-2xl font-bold">This guide couldn’t be loaded</h1>
+      <p class="mt-2 opacity-70">
+        Try again, or read it <a class="link link-primary" [href]="sourceUrl()">on GitHub</a>.
+      </p>
+    } @else if (rendered(); as r) {
+      <div class="prose prose-cadence" [innerHTML]="html()" (click)="onContentClick($event)"></div>
+
+      <div class="mt-12 grid gap-3 border-t border-base-content/10 pt-8 sm:grid-cols-2">
+        @if (prev(); as p) {
+          <a [routerLink]="['/docs', p.slug]" class="surface surface-interactive p-4">
+            <span class="text-xs opacity-60">← Previous</span>
+            <span class="block font-bold">{{ p.title }}</span>
+          </a>
+        } @else {
+          <span></span>
+        }
+        @if (next(); as n) {
+          <a [routerLink]="['/docs', n.slug]" class="surface surface-interactive p-4 text-right">
+            <span class="text-xs opacity-60">Next →</span>
+            <span class="block font-bold">{{ n.title }}</span>
+          </a>
+        }
+      </div>
+      <a
+        [href]="sourceUrl()"
+        target="_blank"
+        rel="noopener"
+        class="mt-6 inline-flex items-center gap-2 text-sm opacity-60 hover:opacity-100"
+      >
+        <app-icon name="github" [size]="15" /> Edit this page on GitHub
+      </a>
+    }
+  </article>
+
+  <!-- On this page -->
+  <aside class="hidden xl:sticky xl:top-24 xl:block xl:self-start" aria-label="On this page">
+    @if (rendered()?.toc?.length) {
+      <p class="mb-3 text-[11px] font-semibold uppercase tracking-widest opacity-50">
+        On this page
+      </p>
+      <ul class="space-y-2 border-l border-base-content/10 text-sm">
+        @for (t of rendered()!.toc; track t.id) {
+          <li>
+            <a
+              [href]="'#' + t.id"
+              (click)="scrollTo($event, t.id)"
+              class="-ml-px block border-l border-transparent pl-4 opacity-70 hover:border-primary hover:text-primary hover:opacity-100"
+              >{{ t.text }}</a
+            >
+          </li>
+        }
+      </ul>
+    }
+  </aside>
+</div>

@@ -1,0 +1,187 @@
+@import 'tailwindcss';
+@import '../../../packages/ui-theme/cadence.css';
+@plugin '@tailwindcss/typography';
+
+/* Horizontal page gutter that also clears the notch / rounded corners (landscape iPhone): section
+   backgrounds run edge to edge while their content stays inside the safe area. */
+@utility page-gutter {
+  padding-left: calc(1rem + env(safe-area-inset-left));
+  padding-right: calc(1rem + env(safe-area-inset-right));
+  @variant sm {
+    padding-left: calc(1.5rem + env(safe-area-inset-left));
+    padding-right: calc(1.5rem + env(safe-area-inset-right));
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: calc(5.5rem + env(safe-area-inset-top));
+}
+
+/* Long-form docs: Tailwind Typography mapped onto the daisyUI wine theme. */
+.prose-cadence {
+  --tw-prose-body: color-mix(in oklab, var(--color-base-content) 85%, transparent);
+  --tw-prose-headings: var(--color-base-content);
+  --tw-prose-lead: var(--color-base-content);
+  --tw-prose-links: var(--color-primary);
+  --tw-prose-bold: var(--color-base-content);
+  --tw-prose-counters: var(--color-primary);
+  --tw-prose-bullets: color-mix(in oklab, var(--color-primary) 60%, transparent);
+  --tw-prose-hr: color-mix(in oklab, var(--color-base-content) 13%, transparent);
+  --tw-prose-quotes: var(--color-base-content);
+  --tw-prose-quote-borders: var(--color-primary);
+  --tw-prose-captions: color-mix(in oklab, var(--color-base-content) 60%, transparent);
+  --tw-prose-code: var(--color-primary);
+  --tw-prose-th-borders: color-mix(in oklab, var(--color-base-content) 18%, transparent);
+  --tw-prose-td-borders: color-mix(in oklab, var(--color-base-content) 10%, transparent);
+  max-width: none;
+}
+.prose-cadence h1 {
+  @apply text-3xl font-extrabold tracking-tight sm:text-4xl;
+}
+.prose-cadence h2 {
+  @apply mt-12 border-t pt-8 text-2xl font-extrabold tracking-tight;
+  border-color: color-mix(in oklab, var(--color-base-content) 10%, transparent);
+}
+.prose-cadence h3 {
+  @apply font-bold;
+}
+.prose-cadence :is(h2, h3) {
+  position: relative;
+}
+/* Anchor sits in the left gutter so it never indents the heading text. */
+.prose-cadence .anchor {
+  @apply absolute -left-5 no-underline opacity-0 transition-opacity;
+  color: var(--color-primary);
+}
+.prose-cadence :is(h2, h3):hover .anchor {
+  @apply opacity-60;
+}
+.prose-cadence a {
+  @apply font-semibold underline-offset-4;
+}
+.prose-cadence :not(pre) > code {
+  @apply rounded-md px-1.5 py-0.5 font-medium;
+  background: color-mix(in oklab, var(--color-primary) 9%, var(--color-base-100));
+  /* Long paths and commands wrap instead of widening the page on phones. */
+  overflow-wrap: anywhere;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+.prose-cadence :not(pre) > code::before,
+.prose-cadence :not(pre) > code::after {
+  content: none;
+}
+.prose-cadence table {
+  @apply block overflow-x-auto text-sm;
+}
+.prose-cadence th {
+  @apply text-xs uppercase tracking-wide;
+}
+.prose-cadence blockquote {
+  @apply rounded-r-box not-italic;
+  background: color-mix(in oklab, var(--color-primary) 6%, var(--color-base-100));
+  padding: 0.75rem 1.25rem;
+}
+.prose-cadence blockquote p::before,
+.prose-cadence blockquote p::after {
+  content: none;
+}
+
+/* Code blocks: flat, outlined, wine-flavoured syntax colours (highlight.js classes). */
+.code-block {
+  @apply relative my-6 overflow-hidden rounded-box;
+  border: 1px solid color-mix(in oklab, var(--color-base-content) 13%, transparent);
+  background: oklch(22% 0.03 5);
+}
+.code-block .code-lang {
+  @apply absolute right-3 top-2 text-[11px] font-semibold uppercase tracking-widest;
+  color: oklch(75% 0.05 10);
+}
+.code-block pre {
+  @apply m-0 overflow-x-auto bg-transparent p-5 text-[13px] leading-relaxed;
+  color: oklch(92% 0.01 10);
+}
+.hljs-keyword,
+.hljs-built_in,
+.hljs-selector-tag {
+  color: oklch(74% 0.14 10);
+}
+.hljs-string,
+.hljs-attr,
+.hljs-template-tag {
+  color: oklch(82% 0.11 78);
+}
+.hljs-comment,
+.hljs-meta {
+  color: oklch(62% 0.03 10);
+  font-style: italic;
+}
+.hljs-number,
+.hljs-literal {
+  color: oklch(78% 0.1 160);
+}
+.hljs-title,
+.hljs-title.function_,
+.hljs-title.class_ {
+  color: oklch(80% 0.09 245);
+}
+.hljs-type,
+.hljs-variable,
+.hljs-params {
+  color: oklch(86% 0.06 330);
+}
+
+/* Product videos are decorative: never show the iOS play-button overlay over the poster
+   (it appears when Safari blocks autoplay, e.g. in Low Power Mode). */
+video::-webkit-media-controls-start-playback-button,
+video::-webkit-media-controls-overlay-play-button,
+video::-webkit-media-controls {
+  display: none !important;
+  -webkit-appearance: none;
+}
+
+/* Product videos (AutoplayVideo): the poster (the video's first frame) shows as soon as it loads, so the
+   video never blinks in; until then the container shows a shimmering skeleton through it. */
+:has(> video.video-loading) {
+  background:
+    linear-gradient(
+        100deg,
+        transparent 30%,
+        color-mix(in oklab, var(--color-base-100) 60%, transparent) 50%,
+        transparent 70%
+      )
+      0 0 / 200% 100% no-repeat,
+    color-mix(in oklab, var(--color-base-content) 8%, var(--color-base-200));
+  animation: video-skeleton 1.4s ease-in-out infinite;
+}
+@keyframes video-skeleton {
+  from {
+    background-position:
+      150% 0,
+      0 0;
+  }
+  to {
+    background-position:
+      -50% 0,
+      0 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  :has(> video.video-loading) {
+    animation: none;
+  }
+}
+
+/* Loading placeholders that only appear when loading is slow: a fast load never flashes them. */
+.reveal-late {
+  animation: reveal-late 0.2s ease 0.4s both;
+}
+@keyframes reveal-late {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

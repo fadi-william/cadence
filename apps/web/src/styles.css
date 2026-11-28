@@ -1,0 +1,102 @@
+@import 'tailwindcss';
+@import '../../../packages/ui-theme/cadence.css';
+
+/*
+ * Material Design 3 "navigation bar" (mobile): 80dp tonal container, 64×32 pill active indicator that
+ * expands from the centre, 12sp labels, state layer on hover/press, safe-area aware, hides on scroll down.
+ */
+@layer components {
+  .m3-navbar {
+    position: fixed;
+    inset-inline: 0;
+    bottom: 0;
+    z-index: 30;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    height: calc(5rem + env(safe-area-inset-bottom));
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-inline: env(safe-area-inset-left) env(safe-area-inset-right);
+    background: color-mix(in oklab, var(--color-primary) 7%, var(--color-base-100));
+    border-top: 1px solid color-mix(in oklab, var(--color-base-content) 10%, transparent);
+    transition: transform 300ms cubic-bezier(0.2, 0, 0, 1);
+  }
+  .m3-navbar.m3-hidden {
+    transform: translateY(100%);
+  }
+  .m3-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding-top: 12px;
+    padding-bottom: 16px;
+    font-size: 12px;
+    line-height: 16px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    color: color-mix(in oklab, var(--color-base-content) 72%, transparent);
+    -webkit-tap-highlight-color: transparent;
+    cursor: pointer;
+    user-select: none;
+  }
+  .m3-nav-indicator {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 64px;
+    height: 32px;
+    border-radius: 9999px;
+  }
+  /* Active indicator (secondary-container in M3 terms). */
+  .m3-nav-indicator::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: color-mix(in oklab, var(--color-primary) 18%, var(--color-base-100));
+    transform: scaleX(0.32);
+    opacity: 0;
+    transition:
+      transform 300ms cubic-bezier(0.2, 0, 0, 1),
+      opacity 120ms linear;
+  }
+  /* State layer. */
+  .m3-nav-indicator::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: currentColor;
+    opacity: 0;
+    transition: opacity 150ms linear;
+  }
+  .m3-nav-item:hover .m3-nav-indicator::after {
+    opacity: 0.08;
+  }
+  .m3-nav-item:active .m3-nav-indicator::after {
+    opacity: 0.12;
+  }
+  .m3-nav-item:focus-visible {
+    outline: none;
+  }
+  .m3-nav-item:focus-visible .m3-nav-indicator {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+  .m3-nav-indicator > * {
+    position: relative;
+    z-index: 1;
+  }
+  .m3-nav-item.m3-active {
+    color: var(--color-base-content);
+    font-weight: 700;
+  }
+  .m3-nav-item.m3-active .m3-nav-indicator {
+    color: var(--color-primary);
+  }
+  .m3-nav-item.m3-active .m3-nav-indicator::before {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}

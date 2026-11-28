@@ -1,0 +1,32 @@
+<div class="flex flex-wrap items-center gap-2">
+  <label class="select select-sm w-44 rounded-full">
+    <app-icon name="calendar" [size]="14" class="opacity-60" />
+    <select aria-label="Date range" (change)="choose(+$any($event.target).value)">
+      @for (o of options; track o.days) {
+        <option [value]="o.days" [selected]="preset() === o.days">{{ o.label }}</option>
+      }
+      <option value="0" [selected]="preset() === 0">Custom…</option>
+    </select>
+  </label>
+  @if (preset() === 0) {
+    <div class="join">
+      <input
+        type="date"
+        class="input input-sm join-item w-36 rounded-l-full"
+        [max]="range().to"
+        [value]="range().from"
+        (change)="set($any($event.target).value, range().to)"
+        aria-label="From"
+      />
+      <input
+        type="date"
+        class="input input-sm join-item w-36 rounded-r-full"
+        [min]="range().from"
+        [max]="today"
+        [value]="range().to"
+        (change)="set(range().from, $any($event.target).value)"
+        aria-label="To"
+      />
+    </div>
+  }
+</div>

@@ -1,0 +1,86 @@
+.ip-phone {
+  position: relative;
+  width: var(--w);
+  padding: calc(var(--w) * 0.016);
+  border-radius: calc(var(--w) * 0.175);
+  background: linear-gradient(
+    145deg,
+    #c9c4c1 0%,
+    #8f8a88 22%,
+    #5d5957 50%,
+    #8f8a88 78%,
+    #d6d1ce 100%
+  );
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0.35),
+    0 1px 2px rgb(0 0 0 / 0.08);
+}
+.ip-bezel {
+  position: relative;
+  padding: calc(var(--w) * 0.03);
+  border-radius: calc(var(--w) * 0.16);
+  background: #0b0b0c;
+}
+/* The screen is a full 393 x 852 iPhone 15 Pro display; sizes below are in iOS points / 393. */
+.ip-screen {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 393 / 852;
+  border-radius: calc(var(--w) * 0.13);
+  background: #fff;
+  container-type: inline-size;
+}
+.ip-content {
+  position: absolute;
+  inset: 0;
+}
+.ip-content ::ng-deep > * {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+}
+/* Status bar drawn over the app, inside the safe area the app itself leaves free (59pt). */
+.ip-status {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 15cqw; /* 59pt */
+  display: grid;
+  grid-template-columns: 1fr 32cqw 1fr;
+  align-items: center;
+  justify-items: center;
+  padding: 0 3cqw;
+  color: #1d0f14;
+  font:
+    600 4.4cqw / 1 -apple-system,
+    'SF Pro Text',
+    'Plus Jakarta Sans',
+    sans-serif;
+  letter-spacing: -0.01em;
+  z-index: 2;
+}
+.ip-island {
+  position: absolute;
+  top: 2.8cqw;
+  left: 50%;
+  width: 32cqw;
+  height: 9.4cqw;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  background: #000;
+  z-index: 3;
+}
+/* Home indicator drawn over the app's bottom safe area (34pt). */
+.ip-home {
+  position: absolute;
+  bottom: 2.1cqw;
+  left: 50%;
+  width: 34cqw;
+  height: 1.3cqw;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  background: #111;
+  opacity: 0.85;
+  z-index: 2;
+}

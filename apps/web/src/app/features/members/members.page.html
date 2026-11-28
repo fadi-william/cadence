@@ -1,0 +1,348 @@
+<app-page-header
+  heading="People"
+  eyebrow="Organization"
+  subtitle="Everyone’s Azure DevOps and Jira work, combined per person · last 30 days"
+>
+  <button class="btn btn-primary rounded-full" (click)="openEdit()" [disabled]="!managers().length">
+    <app-icon name="plus" [size]="16" /> Add person
+  </button>
+</app-page-header>
+
+<div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center">
+  <label class="input w-full rounded-full sm:max-w-xs">
+    <app-icon name="search" [size]="16" class="opacity-50" />
+    <input
+      type="search"
+      placeholder="Search people or usernames"
+      [value]="query()"
+      (input)="query.set($any($event.target).value)"
+    />
+  </label>
+  @if (managers().length > 1) {
+    <select
+      class="select w-full rounded-full sm:w-56"
+      aria-label="Filter by manager"
+      (change)="managerFilter.set($any($event.target).value)"
+    >
+      <option value="">All teams</option>
+      @for (m of managers(); track m.id) {
+        <option [value]="m.id" [selected]="managerFilter() === m.id">{{ m.name }}</option>
+      }
+    </select>
+  }
+  <div class="join ml-auto hidden sm:flex" role="group" aria-label="View">
+    <button
+      class="btn join-item btn-sm rounded-l-full"
+      [class.btn-primary]="mode() === 'grid'"
+      (click)="mode.set('grid')"
+      aria-label="Grid view"
+    >
+      <app-icon name="dashboard" [size]="14" />
+    </button>
+    <button
+      class="btn join-item btn-sm rounded-r-full"
+      [class.btn-primary]="mode() === 'list'"
+      (click)="mode.set('list')"
+      aria-label="List view"
+    >
+      <app-icon name="menu" [size]="14" />
+    </button>
+  </div>
+</div>
+
+@if (members.isLoading() && !members.value()) {
+  <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+    @for (i of [1, 2, 3]; track i) {
+      <div class="skeleton h-64 rounded-box"></div>
+    }
+  </div>
+} @else if (!filtered().length) {
+  <div class="surface p-10 text-center">
+    <app-icon name="users" [size]="40" class="text-primary" />
+    <p class="mt-2 font-semibold">
+      {{ managers().length ? 'No people found' : 'No teams yet' }}
+    </p>
+    <p class="text-sm opacity-70">
+      {{
+        managers().length
+          ? 'Try another search, or add someone.'
+          : 'Add an engineering manager under Teams & tribes first.'
+      }}
+    </p>
+  </div>
+} @else if (mode() === 'grid') {
+  <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+    @for (m of filtered(); track m.id) {
+      <article class="surface surface-interactive group flex flex-col overflow-hidden">
+        <div class="cover-soft h-20"></div>
+        <div class="-mt-10 flex items-end justify-between px-5">
+          <div class="rounded-full ring-4 ring-base-100">
+            <app-avatar [name]="m.name" [size]="72" />
+          </div>
+          <div class="dropdown dropdown-end">
+            <button
+              tabindex="0"
+              class="btn btn-circle btn-ghost btn-sm"
+              [attr.aria-label]="'Actions for ' + m.name"
+            >
+              <app-icon name="more" />
+            </button>
+            <ul
+              tabindex="0"
+              class="menu dropdown-content z-20 w-52 rounded-box border border-base-300 bg-base-100 p-2 shadow-xl"
+            >
+              <li>
+                <button class="rounded-full" (click)="openIdentities(m)">
+                  <app-icon name="link" [size]="15" /> Link identities
+                </button>
+              </li>
+              <li>
+                <button class="rounded-full" (click)="openEdit(m)">
+                  <app-icon name="edit" [size]="15" /> Edit
+                </button>
+              </li>
+              <li>
+                <button class="rounded-full text-error" (click)="remove(m)">
+                  <app-icon name="trash" [size]="15" /> Delete
+                </button>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div class="flex flex-1 flex-col gap-3 p-5 pt-3">
+          <div>
+            <a [routerLink]="['/members', m.id]" class="text-lg font-bold hover:text-primary">{{
+              m.name
+            }}</a>
+            <p class="text-sm opacity-60">{{ m.title || 'Engineer' }} · {{ m.manager?.name }}</p>
+          </div>
+          <div class="flex flex-wrap gap-1.5">
+            @for (i of m.identities; track i.id) {
+              <span
+                class="badge badge-soft gap-1.5 rounded-full"
+                [class]="i.provider === 'JIRA' ? 'badge-info' : 'badge-primary'"
+                [title]="i.connectionName"
+              >
+                <app-provider-icon [provider]="i.provider" [size]="13" /> {{ i.username }}
+              </span>
+            } @empty {
+              <button
+                class="badge badge-warning badge-soft gap-1 rounded-full"
+                (click)="openIdentities(m)"
+              >
+                <app-icon name="link" [size]="12" /> Link Azure DevOps & Jira
+              </button>
+            }
+          </div>
+          <div class="mt-auto grid grid-cols-4 gap-1 rounded-box bg-base-200 p-2 text-center">
+            @for (s of quickStats(totals(m.id)); track s.label) {
+              <div [title]="s.label">
+                <div class="text-lg font-extrabold">{{ s.value }}</div>
+                <div class="text-[11px] leading-tight opacity-60">{{ s.label }}</div>
+              </div>
+            }
+          </div>
+          <a [routerLink]="['/members', m.id]" class="btn btn-ghost btn-sm rounded-full">
+            View combined profile <app-icon name="chevronRight" [size]="14" />
+          </a>
+        </div>
+      </article>
+    }
+  </div>
+} @else {
+  <div class="surface overflow-x-auto">
+    <table class="table">
+      <thead>
+        <tr class="text-xs uppercase tracking-wide">
+          <th>Person</th>
+          <th class="hidden md:table-cell">Identities</th>
+          <th>Commits</th>
+          <th class="hidden sm:table-cell">PRs merged</th>
+          <th class="hidden sm:table-cell">Issues</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (m of filtered(); track m.id) {
+          <tr class="hover:bg-base-200/60">
+            <td>
+              <a [routerLink]="['/members', m.id]" class="flex items-center gap-3">
+                <app-avatar [name]="m.name" [size]="36" />
+                <div>
+                  <div class="font-semibold">{{ m.name }}</div>
+                  <div class="text-xs opacity-60">{{ m.manager?.name }}</div>
+                </div>
+              </a>
+            </td>
+            <td class="hidden md:table-cell">
+              <div class="flex gap-1">
+                @for (i of m.identities; track i.id) {
+                  <app-provider-icon
+                    [provider]="i.provider"
+                    [size]="16"
+                    [attr.title]="i.username"
+                  />
+                }
+              </div>
+            </td>
+            <td>{{ totals(m.id)?.commits ?? 0 }}</td>
+            <td class="hidden sm:table-cell">{{ totals(m.id)?.prsMerged ?? 0 }}</td>
+            <td class="hidden sm:table-cell">{{ totals(m.id)?.issuesCompleted ?? 0 }}</td>
+            <td class="text-right">
+              <button
+                class="btn btn-circle btn-ghost btn-sm"
+                (click)="openIdentities(m)"
+                title="Link identities"
+              >
+                <app-icon name="link" [size]="15" />
+              </button>
+              <button class="btn btn-circle btn-ghost btn-sm" (click)="openEdit(m)" title="Edit">
+                <app-icon name="edit" [size]="15" />
+              </button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
+
+<!-- Create / edit -->
+<dialog class="modal modal-bottom sm:modal-middle" #editDialog>
+  <form class="modal-box rounded-t-box sm:rounded-box" (submit)="saveMember($event)" novalidate>
+    <h3 class="mb-2 text-xl font-bold">{{ editing() ? 'Edit person' : 'Add a person' }}</h3>
+    <app-field label="Full name" [field]="mf.name">
+      <input
+        class="input w-full"
+        placeholder="Hoda Fathy"
+        [class.input-error]="invalid(mf.name)"
+        [formField]="mf.name"
+      />
+    </app-field>
+    <app-field label="E-mail" [field]="mf.email" [optional]="true">
+      <input
+        class="input w-full"
+        type="email"
+        placeholder="hoda@cadence.local"
+        [class.input-error]="invalid(mf.email)"
+        [formField]="mf.email"
+      />
+    </app-field>
+    <app-field label="Title" [optional]="true">
+      <input class="input w-full" placeholder="Senior Engineer" [formField]="mf.title" />
+    </app-field>
+    <app-field label="Engineering manager" [field]="mf.managerId">
+      <select
+        class="select w-full"
+        [class.select-error]="invalid(mf.managerId)"
+        [formField]="mf.managerId"
+      >
+        <option value="" disabled>Choose a manager</option>
+        @for (m of managers(); track m.id) {
+          <option [value]="m.id">{{ m.name }}</option>
+        }
+      </select>
+    </app-field>
+    <div class="modal-action">
+      <button type="button" class="btn btn-ghost rounded-full" (click)="editDialog.close()">
+        Cancel
+      </button>
+      <button class="btn btn-primary rounded-full" [disabled]="mf().submitting()">Save</button>
+    </div>
+  </form>
+  <form method="dialog" class="modal-backdrop"><button>close</button></form>
+</dialog>
+
+<!-- Link identities -->
+<dialog class="modal modal-bottom sm:modal-middle" #idDialog>
+  <div class="modal-box rounded-t-box sm:rounded-box">
+    <div class="mb-4 flex items-center gap-3">
+      <app-avatar [name]="selected()?.name ?? '?'" [size]="44" />
+      <div>
+        <h3 class="text-xl font-bold">Linked identities</h3>
+        <p class="text-sm opacity-60">
+          {{ selected()?.name }}’s accounts, used to merge their activity.
+        </p>
+      </div>
+    </div>
+    @if (!connections().length) {
+      <div role="alert" class="alert alert-warning alert-soft text-sm">
+        No integrations yet. An admin can connect Azure DevOps and Jira under Integrations.
+      </div>
+    }
+    <div class="flex flex-col gap-3">
+      @for (c of connections(); track c.id) {
+        <div class="rounded-box border border-base-300 p-3">
+          <div class="mb-2 flex items-center gap-2 text-sm font-semibold">
+            <app-provider-icon [provider]="c.provider" [size]="18" /> {{ labels[c.provider] }}
+            <span class="font-normal opacity-50">· {{ c.name }}</span>
+            @if (linked(c.id)) {
+              <span class="badge badge-success badge-soft badge-sm ml-auto rounded-full"
+                >Linked</span
+              >
+            }
+          </div>
+          <div class="relative">
+            <div class="join w-full">
+              <label class="input join-item w-full rounded-l-full">
+                <app-icon name="search" [size]="14" class="opacity-50" />
+                <input
+                  [placeholder]="hint(c.provider)"
+                  [value]="drafts()[c.id] ?? ''"
+                  (input)="onIdentityInput(c.id, $any($event.target).value)"
+                  (blur)="closeSuggestions(c.id)"
+                  [attr.aria-label]="labels[c.provider] + ' username'"
+                  autocomplete="off"
+                />
+                @if (searching() === c.id) {
+                  <span class="loading loading-spinner loading-xs"></span>
+                }
+              </label>
+              <button
+                class="btn btn-primary join-item"
+                [class.rounded-r-full]="!linked(c.id)"
+                (click)="link(c.id)"
+                [disabled]="!drafts()[c.id]"
+              >
+                Save
+              </button>
+              @if (linked(c.id)) {
+                <button
+                  class="btn join-item rounded-r-full text-error"
+                  (click)="unlink(c.id)"
+                  title="Unlink"
+                >
+                  <app-icon name="x" [size]="14" />
+                </button>
+              }
+            </div>
+            @if (suggestions()[c.id]?.length) {
+              <ul
+                class="menu absolute z-20 mt-1 max-h-60 w-full flex-nowrap overflow-y-auto rounded-box border border-base-300 bg-base-100 p-1 shadow-xl"
+                role="listbox"
+              >
+                @for (u of suggestions()[c.id]; track u.username) {
+                  <li>
+                    <button
+                      type="button"
+                      class="rounded-full"
+                      (mousedown)="pick(c.id, u.username)"
+                      role="option"
+                    >
+                      <span class="font-medium">{{ u.displayName }}</span>
+                      <span class="ml-auto truncate text-xs opacity-60">{{ u.username }}</span>
+                    </button>
+                  </li>
+                }
+              </ul>
+            }
+          </div>
+        </div>
+      }
+    </div>
+    <div class="modal-action">
+      <button class="btn btn-primary rounded-full" (click)="idDialog.close()">Done</button>
+    </div>
+  </div>
+  <form method="dialog" class="modal-backdrop"><button>close</button></form>
+</dialog>

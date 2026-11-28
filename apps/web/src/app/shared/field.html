@@ -1,0 +1,14 @@
+<fieldset class="fieldset py-1">
+  <legend class="fieldset-legend pb-1 text-sm font-semibold">
+    {{ label() }}
+    @if (optional()) {
+      <span class="font-normal opacity-50">optional</span>
+    }
+  </legend>
+  <ng-content />
+  @if (error(); as message) {
+    <p class="label text-error" role="alert">{{ message }}</p>
+  } @else if (hint()) {
+    <p class="label whitespace-normal">{{ hint() }}</p>
+  }
+</fieldset>

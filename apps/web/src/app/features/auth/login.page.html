@@ -1,0 +1,49 @@
+<app-auth-layout>
+  <h1 class="text-2xl font-extrabold tracking-tight">Welcome back</h1>
+  <p class="mb-5 text-sm opacity-70">Sign in to see your teams’ delivery.</p>
+
+  @if (expired() && !error()) {
+    <div role="alert" class="alert alert-warning alert-soft mb-4 text-sm">
+      Your session expired. Please sign in again.
+    </div>
+  }
+  @if (error()) {
+    <div role="alert" class="alert alert-error alert-soft mb-4 text-sm">{{ error() }}</div>
+  }
+
+  <form class="flex flex-col gap-2" (submit)="onSubmit($event)" novalidate>
+    <app-field label="E-mail" [field]="f.email">
+      <label class="input w-full" [class.input-error]="invalid(f.email)">
+        <app-icon name="mail" [size]="16" class="opacity-50" />
+        <input
+          type="email"
+          placeholder="you@cadence.local"
+          autocomplete="username"
+          [formField]="f.email"
+        />
+      </label>
+    </app-field>
+    <app-field label="Password" [field]="f.password">
+      <label class="input w-full" [class.input-error]="invalid(f.password)">
+        <app-icon name="lock" [size]="16" class="opacity-50" />
+        <input
+          type="password"
+          placeholder="Your password"
+          autocomplete="current-password"
+          [formField]="f.password"
+        />
+      </label>
+    </app-field>
+    <div class="-mt-1 flex justify-end">
+      <a routerLink="/forgot-password" class="link link-hover link-primary text-sm"
+        >Forgot password?</a
+      >
+    </div>
+    <button class="btn btn-primary mt-3 rounded-full" [disabled]="f().submitting()">
+      @if (f().submitting()) {
+        <span class="loading loading-spinner loading-sm"></span>
+      }
+      Sign in
+    </button>
+  </form>
+</app-auth-layout>

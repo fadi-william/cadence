@@ -1,0 +1,22 @@
+<div class="overflow-x-auto pb-1" #scroller>
+  <div
+    class="grid w-max grid-flow-col grid-rows-7 gap-1"
+    role="img"
+    [attr.aria-label]="'Activity calendar, ' + total() + ' contributions'"
+  >
+    @for (cell of cells(); track $index) {
+      <div
+        class="size-3.5 rounded-[4px]"
+        [style.background]="cell ? shade(cell.value) : 'transparent'"
+        [attr.title]="cell ? cell.date + ': ' + cell.value + ' contributions' : null"
+      ></div>
+    }
+  </div>
+</div>
+<div class="mt-2 flex items-center justify-end gap-1 text-[11px] opacity-60">
+  Less
+  @for (l of levels; track l) {
+    <span class="size-3 rounded-[3px]" [style.background]="shade(l * max())"></span>
+  }
+  More
+</div>

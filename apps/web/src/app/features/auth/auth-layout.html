@@ -1,0 +1,35 @@
+<div
+  class="grid min-h-dvh pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] pt-[env(safe-area-inset-top)] lg:grid-cols-[minmax(0,6fr)_minmax(0,5fr)]"
+>
+  <section
+    class="bg-wine relative hidden overflow-hidden p-12 lg:flex lg:flex-col lg:justify-between"
+  >
+    <app-logo [size]="46" [inverse]="true" />
+
+    <div class="relative z-10 max-w-md">
+      <h2 class="text-4xl font-extrabold leading-tight text-white xl:text-5xl">
+        {{ tagline() }}
+      </h2>
+      <ul class="mt-8 space-y-4 text-white/80">
+        @for (b of bullets; track b.text) {
+          <li class="flex items-center gap-3">
+            <span class="grid size-9 place-items-center rounded-full bg-white/15 text-accent"
+              ><app-icon [name]="b.icon" [size]="17"
+            /></span>
+            {{ b.text }}
+          </li>
+        }
+      </ul>
+    </div>
+
+    <p class="text-sm text-white/50">Metrics are conversation starters, not scorecards.</p>
+    <app-brand-arcs [size]="760" />
+  </section>
+
+  <section class="flex flex-col items-center justify-center gap-6 px-4 py-10 sm:px-8">
+    <app-logo class="lg:hidden" [size]="44" />
+    <div class="surface w-full max-w-md p-6 sm:p-8">
+      <ng-content />
+    </div>
+  </section>
+</div>

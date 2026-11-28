@@ -1,0 +1,87 @@
+<app-page-header heading="Account" eyebrow="You" />
+<div class="grid gap-5 lg:grid-cols-5">
+  <div class="flex flex-col gap-5 lg:col-span-2">
+    <section class="surface overflow-hidden">
+      <div class="bg-wine h-20"></div>
+      <div class="-mt-10 flex flex-col items-center gap-1 p-5 pt-0 text-center">
+        <div class="rounded-full ring-4 ring-base-100">
+          <app-avatar [name]="user()?.name ?? '?'" [size]="80" />
+        </div>
+        <div class="mt-2 text-xl font-extrabold">{{ user()?.name }}</div>
+        <div class="text-sm opacity-70">{{ user()?.email }}</div>
+        <span class="badge badge-primary badge-soft mt-1 rounded-full">{{ role() }}</span>
+      </div>
+    </section>
+    <section class="surface p-5">
+      <h2 class="mb-3 font-bold">Appearance</h2>
+      <div class="join w-full" role="group" aria-label="Theme">
+        <button
+          class="btn join-item flex-1 rounded-l-full"
+          [class.btn-primary]="!theme.isDark()"
+          (click)="theme.set('cadence')"
+        >
+          <app-icon name="sun" [size]="16" /> Light
+        </button>
+        <button
+          class="btn join-item flex-1 rounded-r-full"
+          [class.btn-primary]="theme.isDark()"
+          (click)="theme.set('cadence-dark')"
+        >
+          <app-icon name="moon" [size]="16" /> Dark
+        </button>
+      </div>
+    </section>
+  </div>
+
+  <section class="surface p-5 sm:p-6 lg:col-span-3">
+    <h2 class="text-lg font-bold">Change password</h2>
+    <p class="mb-3 text-sm opacity-60">Other signed-in sessions are signed out after a change.</p>
+    <form class="flex flex-col gap-1" (submit)="onSubmit($event)" novalidate>
+      <app-field label="Current password" [field]="f.current">
+        <label class="input w-full" [class.input-error]="invalid(f.current)">
+          <app-icon name="lock" [size]="16" class="opacity-50" />
+          <input
+            type="password"
+            placeholder="Current password"
+            autocomplete="current-password"
+            [formField]="f.current"
+          />
+        </label>
+      </app-field>
+      <app-field label="New password" [field]="f.password">
+        <label class="input w-full" [class.input-error]="invalid(f.password)">
+          <app-icon name="lock" [size]="16" class="opacity-50" />
+          <input
+            type="password"
+            placeholder="New password (min. 12 characters)"
+            autocomplete="new-password"
+            [formField]="f.password"
+          />
+        </label>
+      </app-field>
+      <progress
+        class="progress h-1.5 w-full"
+        [class]="strength().cls"
+        [value]="strength().score"
+        max="4"
+      ></progress>
+      <app-field label="Confirm new password" [field]="f.confirm">
+        <label class="input w-full" [class.input-error]="invalid(f.confirm)">
+          <app-icon name="lock" [size]="16" class="opacity-50" />
+          <input
+            type="password"
+            placeholder="Confirm new password"
+            autocomplete="new-password"
+            [formField]="f.confirm"
+          />
+        </label>
+      </app-field>
+      <button class="btn btn-primary mt-3 self-start rounded-full" [disabled]="f().submitting()">
+        @if (f().submitting()) {
+          <span class="loading loading-spinner loading-sm"></span>
+        }
+        Update password
+      </button>
+    </form>
+  </section>
+</div>

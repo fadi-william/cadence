@@ -1,0 +1,167 @@
+/*
+ * Cadence design system: daisyUI 5 "wine" themes + shared component classes.
+ * Imported by apps/web (the product) and apps/site (the website) after `@import 'tailwindcss';`.
+ */
+@plugin 'daisyui' {
+  themes: false;
+}
+
+/*
+ * Cadence "wine" themes for daisyUI 5. Toggle with <html data-theme="cadence|cadence-dark">.
+ * Burgundy primary, rosé secondary, champagne accent, aubergine neutral, rounded everything.
+ */
+@plugin 'daisyui/theme' {
+  name: "cadence";
+  default: true;
+  color-scheme: light;
+  --color-base-100: oklch(99.4% 0.003 15);
+  --color-base-200: oklch(97.2% 0.008 15);
+  --color-base-300: oklch(93% 0.014 15);
+  --color-base-content: oklch(25% 0.045 5);
+  --color-primary: oklch(42% 0.16 12);
+  --color-primary-content: oklch(98% 0.01 12);
+  --color-secondary: oklch(62% 0.15 2);
+  --color-secondary-content: oklch(99% 0.005 2);
+  --color-accent: oklch(80% 0.11 78);
+  --color-accent-content: oklch(28% 0.06 60);
+  --color-neutral: oklch(26% 0.05 355);
+  --color-neutral-content: oklch(96% 0.01 355);
+  --color-info: oklch(64% 0.11 245);
+  --color-info-content: oklch(99% 0.005 245);
+  --color-success: oklch(64% 0.12 160);
+  --color-success-content: oklch(99% 0.005 160);
+  --color-warning: oklch(79% 0.14 72);
+  --color-warning-content: oklch(28% 0.06 60);
+  --color-error: oklch(58% 0.2 25);
+  --color-error-content: oklch(99% 0.005 25);
+  --radius-selector: 2rem;
+  --radius-field: 0.875rem;
+  --radius-box: 1.375rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 1;
+  --noise: 0;
+}
+
+@plugin 'daisyui/theme' {
+  name: "cadence-dark";
+  prefersdark: true;
+  color-scheme: dark;
+  --color-base-100: oklch(21.5% 0.022 5);
+  --color-base-200: oklch(17.5% 0.02 5);
+  --color-base-300: oklch(28% 0.03 5);
+  --color-base-content: oklch(93% 0.012 10);
+  --color-primary: oklch(66% 0.16 10);
+  --color-primary-content: oklch(18% 0.04 10);
+  --color-secondary: oklch(72% 0.13 0);
+  --color-secondary-content: oklch(18% 0.04 0);
+  --color-accent: oklch(82% 0.1 78);
+  --color-accent-content: oklch(22% 0.05 60);
+  --color-neutral: oklch(30% 0.045 355);
+  --color-neutral-content: oklch(94% 0.01 355);
+  --color-info: oklch(70% 0.11 245);
+  --color-info-content: oklch(18% 0.04 245);
+  --color-success: oklch(70% 0.12 160);
+  --color-success-content: oklch(18% 0.04 160);
+  --color-warning: oklch(82% 0.13 72);
+  --color-warning-content: oklch(22% 0.05 60);
+  --color-error: oklch(66% 0.18 25);
+  --color-error-content: oklch(18% 0.04 25);
+  --radius-selector: 2rem;
+  --radius-field: 0.875rem;
+  --radius-box: 1.375rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 1;
+  --noise: 0;
+}
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  html,
+  body {
+    @apply min-h-full bg-base-200 text-base-content antialiased;
+  }
+}
+
+@layer components {
+  /* Flat wine panel used by the sidenav, hero banners and auth panels. */
+  .bg-wine {
+    background-color: oklch(31% 0.1 8);
+    color: var(--color-neutral-content);
+  }
+  [data-theme="cadence-dark"] .bg-wine {
+    background-color: oklch(24% 0.06 8);
+  }
+
+  /* Outlined card used across pages: flat, no shadow, a clear theme-aware 1px border. */
+  /* min-w-0: cards are grid/flex items; without it charts force them wider than small screens. */
+  .surface {
+    @apply min-w-0 rounded-box bg-base-100;
+    border: 1px solid
+      color-mix(in oklab, var(--color-base-content) 13%, transparent);
+    box-shadow: none;
+  }
+  /* Clickable outlined cards: the outline turns wine on hover/focus instead of lifting with a shadow. */
+  .surface-interactive {
+    transition:
+      border-color 150ms ease,
+      background-color 150ms ease;
+  }
+  .surface-interactive:hover,
+  .surface-interactive:focus-visible {
+    border-color: color-mix(in oklab, var(--color-primary) 55%, transparent);
+    background-color: color-mix(
+      in oklab,
+      var(--color-primary) 3%,
+      var(--color-base-100)
+    );
+    outline: none;
+  }
+
+  /* Light, dotted cover for cards (people), softer than the full wine gradient. */
+  .cover-soft {
+    background:
+      radial-gradient(
+          circle at 1px 1px,
+          color-mix(in oklab, var(--color-primary) 22%, transparent) 1px,
+          transparent 0
+        )
+        0 0 / 14px 14px,
+      linear-gradient(
+        120deg,
+        color-mix(in oklab, var(--color-primary) 20%, var(--color-base-100)) 0%,
+        color-mix(in oklab, var(--color-secondary) 16%, var(--color-base-100))
+          55%,
+        color-mix(in oklab, var(--color-accent) 30%, var(--color-base-100)) 100%
+      );
+  }
+
+  /* Solid gradient bubble with a white icon. Set --tone to a theme colour. */
+  .icon-gradient {
+    background: linear-gradient(
+      135deg,
+      color-mix(in oklab, var(--tone) 70%, white) 0%,
+      var(--tone) 100%
+    );
+    color: white;
+  }
+
+  /* Icon bubble (KPI cards, list items). */
+  .icon-bubble {
+    @apply grid size-11 shrink-0 place-items-center rounded-full;
+  }
+}
+
+/* Theme changes apply instantly: transitions are suspended for the frame in which the theme flips,
+   so colour transitions (buttons, cards, nav) don't fade between light and dark. */
+:root[data-theme-switching] *,
+:root[data-theme-switching] *::before,
+:root[data-theme-switching] *::after {
+  transition: none !important;
+}

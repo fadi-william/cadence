@@ -1,0 +1,196 @@
+<!-- Hero -->
+<section class="bg-wine relative mb-6 overflow-hidden rounded-box p-6 sm:p-8">
+  <app-brand-arcs [size]="520" />
+  <div class="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+    <div>
+      <p class="text-sm font-medium text-white/60">{{ today }}</p>
+      <h1 class="mt-1 text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
+        {{ greeting() }}, {{ firstName() }}
+      </h1>
+      <p class="mt-2 max-w-xl text-white/75">
+        Here’s how {{ peopleCount() }} people across {{ teamCount() }}
+        {{ teamCount() === 1 ? 'team' : 'teams' }} delivered between {{ range().from }} and
+        {{ range().to }}.
+      </p>
+    </div>
+    <app-date-range [(range)]="range" />
+  </div>
+  <div class="relative mt-6 grid grid-cols-3 gap-3 sm:max-w-lg">
+    @for (g of glance(); track g.label) {
+      <div class="rounded-box bg-white/10 px-4 py-3 backdrop-blur">
+        <div class="text-2xl font-extrabold text-white">{{ g.value }}</div>
+        <div class="text-xs text-white/65">{{ g.label }}</div>
+      </div>
+    }
+  </div>
+</section>
+
+<!-- KPIs -->
+<div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+  @for (k of kpis(); track k.label) {
+    <app-stat-card
+      [label]="k.label"
+      [value]="k.value"
+      [icon]="k.icon"
+      [color]="k.color"
+      [hint]="k.hint"
+      [current]="k.current"
+      [previous]="k.previous"
+      [series]="k.series"
+    />
+  }
+</div>
+
+<!-- Trend + mix -->
+<div class="mb-6 grid gap-4 xl:grid-cols-3">
+  <section class="surface p-5 xl:col-span-2">
+    <div class="mb-2 flex items-center justify-between">
+      <h2 class="text-lg font-bold">Activity trend</h2>
+      <span class="badge badge-ghost rounded-full">Azure DevOps + Jira</span>
+    </div>
+    @if (trendSpec(); as spec) {
+      <app-chart [spec]="spec" [height]="280" label="Daily activity trend" />
+    } @else {
+      <div class="skeleton h-72 w-full rounded-box"></div>
+    }
+  </section>
+  <section class="surface p-5">
+    <h2 class="text-lg font-bold">Work mix</h2>
+    <p class="text-sm opacity-60">What the activity is made of</p>
+    @if (mixSpec(); as spec) {
+      <app-chart [spec]="spec" [height]="260" label="Work mix" />
+    } @else {
+      <div class="skeleton mt-4 h-60 w-full rounded-box"></div>
+    }
+  </section>
+</div>
+
+<!-- DORA -->
+<section class="mb-6">
+  <div class="mb-3 flex items-center justify-between">
+    <h2 class="text-lg font-bold">Delivery performance</h2>
+    <a routerLink="/delivery" class="btn btn-ghost btn-sm rounded-full"
+      >Details <app-icon name="chevronRight" [size]="14"
+    /></a>
+  </div>
+  @if (dora.value(); as d) {
+    <div [class]="tileGrid">
+      @for (k of doraTiles(); track k.label) {
+        <app-dora-tile
+          [class]="tileSpan($index, $count)"
+          [label]="k.label"
+          [value]="k.value"
+          [icon]="k.icon"
+          [rating]="k.rating"
+          [rated]="k.rated"
+          [hint]="k.hint"
+        />
+      }
+    </div>
+    @if (!d.deployments) {
+      <p class="mt-2 text-sm opacity-60">
+        No deployments yet. Connect Azure DevOps pipelines to see DORA metrics.
+      </p>
+    }
+  } @else {
+    <div [class]="tileGrid">
+      @for (i of [1, 2, 3, 4, 5]; track i) {
+        <div class="skeleton h-24 rounded-box" [class]="tileSpan($index, $count)"></div>
+      }
+    </div>
+  }
+</section>
+
+<!-- Breakdown -->
+<section class="surface overflow-hidden">
+  <div class="flex flex-wrap items-center justify-between gap-3 p-5 pb-3">
+    <h2 class="text-lg font-bold">Breakdown</h2>
+    <div role="tablist" class="tabs tabs-box tabs-sm rounded-full p-1">
+      @for (v of views; track v.id) {
+        <button
+          role="tab"
+          class="tab rounded-full"
+          [class.tab-active]="view() === v.id"
+          (click)="view.set(v.id)"
+        >
+          {{ v.label }}
+        </button>
+      }
+    </div>
+  </div>
+  @if (loading()) {
+    <div class="flex justify-center p-10">
+      <span class="loading loading-dots loading-lg text-primary"></span>
+    </div>
+  } @else if (!rows().length) {
+    <div class="p-10 text-center">
+      <p class="font-semibold">Nothing to show yet</p>
+      <p class="mb-4 text-sm opacity-70">
+        Add tribe leads, managers and people to start tracking activity.
+      </p>
+      <a routerLink="/organization" class="btn btn-primary btn-sm rounded-full"
+        >Set up your organization</a
+      >
+    </div>
+  } @else {
+    <div class="overflow-x-auto">
+      <table class="table">
+        <thead>
+          <tr class="text-xs uppercase tracking-wide">
+            @for (c of columns(); track c.key) {
+              <th [class]="c.cls">
+                <button
+                  class="flex items-center gap-1 uppercase hover:text-primary"
+                  (click)="sort.set(c.key)"
+                >
+                  {{ c.label }}
+                  @if (sort() === c.key) {
+                    <app-icon name="chevronDown" [size]="12" />
+                  }
+                </button>
+              </th>
+            }
+            <th class="hidden xl:table-cell">Cycle time</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (r of rows(); track r.id) {
+            <tr class="hover:bg-base-200/60">
+              <td>
+                <a
+                  [routerLink]="r.link"
+                  class="flex items-center gap-3"
+                  [class.pointer-events-none]="!r.link"
+                >
+                  <app-avatar [name]="r.name" [size]="36" />
+                  <div class="min-w-0">
+                    <div class="truncate font-semibold">{{ r.name }}</div>
+                    <div class="truncate text-xs opacity-60">
+                      {{ r.subtitle
+                      }}{{ r.memberCount !== undefined ? ' · ' + r.memberCount + ' people' : '' }}
+                    </div>
+                  </div>
+                </a>
+              </td>
+              <td class="min-w-36">
+                <div class="flex items-center gap-2">
+                  <span class="w-8 font-semibold">{{ r.totals.commits }}</span>
+                  <progress
+                    class="progress progress-primary h-1.5 w-20"
+                    [value]="r.totals.commits"
+                    [max]="maxCommits()"
+                  ></progress>
+                </div>
+              </td>
+              <td class="hidden sm:table-cell">{{ r.totals.prsMerged }}</td>
+              <td class="hidden md:table-cell">{{ r.totals.prsReviewed }}</td>
+              <td class="hidden md:table-cell">{{ r.totals.issuesCompleted }}</td>
+              <td class="hidden lg:table-cell">{{ r.totals.storyPoints }}</td>
+              <td class="hidden xl:table-cell">{{ hours(r.totals.cycleTimeHoursAvg) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>

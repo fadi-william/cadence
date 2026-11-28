@@ -1,0 +1,15 @@
+{
+  "name": "@cadence/e2e",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "test": "playwright test --trace off",
+    "test:headed": "playwright test --headed",
+    "report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "pg": "^8.16.0"
+  },
+  "license": "Apache-2.0"
+}

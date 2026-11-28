@@ -1,0 +1,40 @@
+<div class="flex items-start justify-between gap-3">
+  <div class="icon-bubble icon-gradient" [style.--tone]="'var(--color-' + color() + ')'">
+    <app-icon [name]="icon()" [size]="20" />
+  </div>
+  @if (delta(); as d) {
+    <span class="badge badge-sm gap-1 rounded-full border-0 font-semibold" [class]="d.cls">
+      <app-icon [name]="d.up ? 'trendUp' : 'trendDown'" [size]="12" /> {{ d.label }}
+    </span>
+  }
+</div>
+<div class="mt-4 text-sm font-medium opacity-70">{{ label() }}</div>
+<div class="flex items-end justify-between gap-3">
+  <div>
+    <div class="text-3xl font-extrabold tracking-tight">{{ value() }}</div>
+    @if (hint()) {
+      <div class="text-xs opacity-60">{{ hint() }}</div>
+    }
+  </div>
+  @if (path(); as p) {
+    <svg
+      viewBox="0 0 100 32"
+      class="h-10 w-24 shrink-0"
+      preserveAspectRatio="none"
+      aria-hidden="true"
+    >
+      <path
+        [attr.d]="p.area"
+        [style.fill]="'color-mix(in oklab, var(--color-' + color() + ') 14%, transparent)'"
+      />
+      <path
+        [attr.d]="p.line"
+        fill="none"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        [style.stroke]="'var(--color-' + color() + ')'"
+      />
+    </svg>
+  }
+</div>

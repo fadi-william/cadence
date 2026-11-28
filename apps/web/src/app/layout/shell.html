@@ -1,0 +1,180 @@
+<div class="drawer lg:drawer-open">
+  <input
+    id="nav-drawer"
+    type="checkbox"
+    class="drawer-toggle"
+    [checked]="layout.mobileOpen()"
+    (change)="layout.mobileOpen.set($any($event.target).checked)"
+  />
+
+  <!-- Safe areas (viewport-fit=cover): side insets for landscape notches. -->
+  <div
+    class="drawer-content flex min-h-dvh flex-col pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]"
+  >
+    <!-- Top bar -->
+    <header
+      class="navbar sticky top-0 z-30 gap-2 bg-base-200/80 px-4 pt-[calc(0.5rem+env(safe-area-inset-top))] backdrop-blur-md sm:px-6 lg:px-8"
+    >
+      <button
+        class="btn btn-circle btn-ghost hidden lg:inline-flex"
+        (click)="layout.toggleCollapsed()"
+        [attr.aria-label]="layout.collapsed() ? 'Expand navigation' : 'Collapse navigation'"
+      >
+        <app-icon name="panel" />
+      </button>
+      <a routerLink="/dashboard" class="flex h-10 items-center lg:hidden" aria-label="Cadence home">
+        <app-logo [size]="34" />
+      </a>
+      <div class="hidden min-w-0 flex-1 items-center gap-2 text-sm lg:flex">
+        <span class="opacity-50">{{ current()?.section }}</span>
+        <app-icon name="chevronRight" [size]="14" class="opacity-40" />
+        <span class="truncate font-semibold">{{ current()?.label }}</span>
+      </div>
+      <div class="flex-1 lg:hidden"></div>
+
+      <label class="swap swap-rotate btn btn-circle btn-ghost" aria-label="Toggle dark mode">
+        <input type="checkbox" [checked]="theme.isDark()" (change)="theme.toggle()" />
+        <app-icon name="sun" class="swap-on" />
+        <app-icon name="moon" class="swap-off" />
+      </label>
+      <div class="dropdown dropdown-end">
+        <div tabindex="0" role="button" class="btn btn-circle btn-ghost" aria-label="Account menu">
+          <app-avatar [name]="user()?.name ?? '?'" [size]="34" />
+        </div>
+        <ul
+          tabindex="0"
+          class="menu dropdown-content z-40 mt-3 w-60 rounded-box border border-base-300 bg-base-100 p-2 shadow-xl"
+        >
+          <li class="menu-title">
+            <span class="truncate text-base-content">{{ user()?.name }}</span>
+            <span class="truncate text-xs font-normal">{{ user()?.email }}</span>
+          </li>
+          <li>
+            <a routerLink="/account" class="rounded-full"
+              ><app-icon name="user" [size]="16" /> Account</a
+            >
+          </li>
+          <li>
+            <button class="rounded-full text-error" (click)="auth.logout()">
+              <app-icon name="logout" [size]="16" /> Sign out
+            </button>
+          </li>
+        </ul>
+      </div>
+    </header>
+
+    <main
+      class="mx-auto w-full max-w-7xl flex-1 px-4 pb-[calc(7rem+env(safe-area-inset-bottom))] pt-2 sm:px-6 lg:px-8 lg:pb-12"
+    >
+      <router-outlet />
+    </main>
+
+    <!-- Mobile bottom navigation, Material Design 3 navigation bar -->
+    <nav class="m3-navbar lg:hidden" [class.m3-hidden]="barHidden()" aria-label="Quick navigation">
+      @for (item of dockItems; track item.path) {
+        <a
+          class="m3-nav-item"
+          [routerLink]="item.path"
+          routerLinkActive="m3-active"
+          ariaCurrentWhenActive="page"
+          #rla="routerLinkActive"
+        >
+          <span class="m3-nav-indicator"
+            ><app-icon [name]="item.icon" [size]="22" [stroke]="rla.isActive ? 2.4 : 1.9"
+          /></span>
+          <span>{{ item.label }}</span>
+        </a>
+      }
+      <label
+        for="nav-drawer"
+        class="m3-nav-item"
+        [class.m3-active]="layout.mobileOpen()"
+        role="button"
+        aria-label="More navigation"
+      >
+        <span class="m3-nav-indicator"><app-icon name="menu" [size]="22" /></span>
+        <span>More</span>
+      </label>
+    </nav>
+  </div>
+
+  <!-- Sidenav -->
+  <aside class="drawer-side z-40">
+    <label for="nav-drawer" class="drawer-overlay" aria-label="Close navigation"></label>
+    <nav
+      class="bg-wine flex min-h-full w-72 flex-col gap-2 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] pt-[max(1rem,env(safe-area-inset-top))] transition-[width] duration-300"
+      [class]="layout.collapsed() ? 'lg:w-24' : 'lg:w-72'"
+      aria-label="Main navigation"
+    >
+      <!-- px-4 matches the nav pills, so the logo lines up with the item icons and section titles. -->
+      <a
+        routerLink="/dashboard"
+        class="mb-4 flex items-center gap-3 rounded-full px-4 py-1"
+        [class]="layout.collapsed() ? 'lg:justify-center lg:px-0' : ''"
+        aria-label="Cadence home"
+        (click)="close()"
+      >
+        <app-logo
+          [size]="42"
+          [inverse]="true"
+          tagline="Engineering insights"
+          [wordmark]="!layout.collapsed() || layout.mobileOpen()"
+        />
+      </a>
+
+      @for (section of sections(); track section.title) {
+        <div class="mt-2">
+          <p
+            class="mb-1 px-4 text-[11px] font-semibold uppercase tracking-widest text-white/45"
+            [class]="layout.collapsed() ? 'lg:invisible' : ''"
+          >
+            {{ section.title }}
+          </p>
+          <ul class="flex flex-col gap-1">
+            @for (item of section.items; track item.path) {
+              <li
+                [class]="layout.collapsed() ? 'lg:tooltip lg:tooltip-right' : ''"
+                [attr.data-tip]="item.label"
+              >
+                <a
+                  [routerLink]="item.path"
+                  routerLinkActive="!bg-base-100 !text-primary"
+                  class="flex items-center gap-3 rounded-full px-4 py-2.5 text-sm font-semibold text-white/75 transition hover:bg-white/10 hover:text-white"
+                  [class]="layout.collapsed() ? 'lg:justify-center lg:px-0' : ''"
+                  (click)="close()"
+                >
+                  <app-icon [name]="item.icon" [size]="19" />
+                  <span [class]="layout.collapsed() ? 'lg:hidden' : ''">{{ item.label }}</span>
+                </a>
+              </li>
+            }
+          </ul>
+        </div>
+      }
+
+      <div class="mt-auto flex flex-col gap-3 pt-6">
+        <div
+          class="rounded-box bg-white/10 p-4 text-xs leading-relaxed text-white/75"
+          [class]="layout.collapsed() ? 'lg:hidden' : ''"
+        >
+          <div class="mb-1 flex items-center gap-2 font-semibold text-accent">
+            <app-icon name="sparkles" [size]="14" /> Good to know
+          </div>
+          Metrics are conversation starters, not scorecards.
+        </div>
+        <a
+          routerLink="/account"
+          (click)="close()"
+          class="flex items-center gap-3 rounded-full bg-black/15 p-1.5 pr-4 transition hover:bg-black/25"
+          [class]="layout.collapsed() ? 'lg:justify-center lg:pr-1.5' : ''"
+        >
+          <app-avatar [name]="user()?.name ?? '?'" [size]="36" />
+          <div class="min-w-0 leading-tight" [class]="layout.collapsed() ? 'lg:hidden' : ''">
+            <div class="truncate text-sm font-semibold text-white">{{ user()?.name }}</div>
+            <div class="truncate text-xs text-white/60">{{ roleLabel() }}</div>
+          </div>
+        </a>
+      </div>
+    </nav>
+  </aside>
+</div>

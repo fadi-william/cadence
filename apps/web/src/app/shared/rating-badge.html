@@ -1,0 +1,7 @@
+@if (rating(); as r) {
+  <span class="badge badge-sm badge-soft rounded-full font-semibold" [class]="cls()">{{
+    label()
+  }}</span>
+} @else {
+  <span class="badge badge-sm badge-ghost rounded-full">No data</span>
+}

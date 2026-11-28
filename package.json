@@ -1,0 +1,50 @@
+{
+  "name": "cadence",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Engineering insights platform — org hierarchy, JIRA & Azure DevOps activity metrics",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "overrides": {
+    "@nestjs/cli": {
+      "glob": "14.0.2"
+    },
+    "archiver-utils": {
+      "glob": "14.0.2"
+    },
+    "@tailwindcss/typography": {
+      "postcss-selector-parser": "6.1.5"
+    },
+    "@prisma/config": {
+      "effect": "3.22.5"
+    }
+  },
+  "scripts": {
+    "build:shared": "npm run build -w @cadence/shared",
+    "build": "npm run build:shared && npm run build -w @cadence/api && npm run build -w @cadence/web && npm run build -w @cadence/site",
+    "dev:api": "npm run start:dev -w @cadence/api",
+    "dev:web": "npm run start -w @cadence/web",
+    "db:up": "docker compose up -d postgres redis",
+    "db:migrate": "npm run prisma:migrate -w @cadence/api",
+    "db:generate": "npm run prisma:generate -w @cadence/api",
+    "test": "npm test -w @cadence/api",
+    "test:web": "npm test -w @cadence/web -- --watch=false",
+    "postinstall": "npm run build:shared",
+    "test:int": "npm run test:int -w @cadence/api",
+    "test:e2e": "npm test -w @cadence/e2e",
+    "lint": "npm run lint -w @cadence/api",
+    "db:seed:demo": "npm run db:seed:demo -w @cadence/api",
+    "dev:site": "npm run start -w @cadence/site",
+    "build:site": "npm run build -w @cadence/site"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fadi-william/Cadence.git"
+  }
+}

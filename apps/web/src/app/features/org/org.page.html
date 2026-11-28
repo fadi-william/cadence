@@ -1,0 +1,210 @@
+<app-page-header
+  heading="Teams & tribes"
+  eyebrow="Organization"
+  subtitle="Admin → tribe leads → engineering managers → people"
+>
+  @if (auth.isAdmin()) {
+    <button class="btn btn-primary rounded-full" (click)="open({ kind: 'TRIBE_LEAD' })">
+      <app-icon name="plus" [size]="16" /> Tribe lead
+    </button>
+  }
+</app-page-header>
+
+@if (tree.isLoading() && !tree.value()) {
+  <div class="grid gap-5 xl:grid-cols-2">
+    <div class="skeleton h-72 rounded-box"></div>
+    <div class="skeleton h-72 rounded-box"></div>
+  </div>
+} @else if (!tribeLeads().length) {
+  <div class="surface flex flex-col items-center gap-2 p-10 text-center">
+    <div class="icon-bubble size-16 bg-primary/10 text-primary">
+      <app-icon name="org" [size]="30" />
+    </div>
+    <h2 class="text-lg font-bold">No tribes yet</h2>
+    <p class="max-w-sm text-sm opacity-70">
+      Start by adding a tribe lead. They can then add engineering managers, who add their people.
+    </p>
+  </div>
+}
+
+<div class="grid gap-5 xl:grid-cols-2">
+  @for (tl of tribeLeads(); track tl.id) {
+    <section class="surface overflow-hidden">
+      <header class="bg-wine flex items-center gap-4 p-5">
+        <div class="rounded-full ring-2 ring-white/30">
+          <app-avatar [name]="tl.name" [size]="52" />
+        </div>
+        <div class="min-w-0 flex-1">
+          <h2 class="truncate text-xl font-extrabold text-white">
+            {{ tl.tribeName || 'Unnamed tribe' }}
+          </h2>
+          <p class="truncate text-sm text-white/70">{{ tl.name }} · {{ tl.email }}</p>
+        </div>
+        <div class="flex gap-1">
+          @if (auth.hasRole('ADMIN', 'TRIBE_LEAD')) {
+            <button
+              class="btn btn-sm rounded-full border-0 bg-white/15 text-white hover:bg-white/25"
+              (click)="open({ kind: 'ENGINEERING_MANAGER', parentId: tl.id, parentName: tl.name })"
+            >
+              <app-icon name="plus" [size]="14" /> Manager
+            </button>
+          }
+          @if (auth.isAdmin()) {
+            <button
+              class="btn btn-circle btn-sm border-0 bg-white/15 text-white hover:bg-white/25"
+              (click)="resetLink(tl)"
+              title="Password reset link"
+            >
+              <app-icon name="key" [size]="14" />
+            </button>
+            <button
+              class="btn btn-circle btn-sm border-0 bg-white/15 text-white hover:bg-error"
+              (click)="removeUser(tl)"
+              aria-label="Delete tribe lead"
+            >
+              <app-icon name="trash" [size]="14" />
+            </button>
+          }
+        </div>
+      </header>
+
+      <div class="flex flex-col gap-3 p-4">
+        @for (em of tl.managers; track em.id) {
+          <div class="collapse collapse-arrow rounded-box border border-base-300 bg-base-200/50">
+            <input type="checkbox" checked [attr.aria-label]="'Toggle ' + em.name" />
+            <div class="collapse-title flex items-center gap-3 pr-12">
+              <app-avatar [name]="em.name" [size]="38" />
+              <div class="min-w-0 flex-1">
+                <div class="truncate font-semibold">{{ em.name }}</div>
+                <div class="text-xs opacity-60">
+                  Engineering manager · {{ em.members.length }} people
+                </div>
+              </div>
+            </div>
+            <div class="collapse-content">
+              <div class="flex flex-wrap gap-2">
+                @for (m of em.members; track m.id) {
+                  <a
+                    [routerLink]="['/members', m.id]"
+                    class="flex items-center gap-2 rounded-full border border-base-300 bg-base-100 py-1 pl-1 pr-3 text-sm transition hover:border-primary/50 hover:text-primary"
+                  >
+                    <app-avatar [name]="m.name" [size]="26" />
+                    {{ m.name }}
+                  </a>
+                } @empty {
+                  <span class="text-sm opacity-60">No people yet.</span>
+                }
+              </div>
+              <div class="mt-3 flex flex-wrap gap-1">
+                <button
+                  class="btn btn-ghost btn-xs rounded-full"
+                  (click)="open({ kind: 'MEMBER', parentId: em.id, parentName: em.name })"
+                >
+                  <app-icon name="plus" [size]="14" /> Person
+                </button>
+                @if (auth.hasRole('ADMIN', 'TRIBE_LEAD')) {
+                  <button class="btn btn-ghost btn-xs rounded-full" (click)="resetLink(em)">
+                    <app-icon name="key" [size]="14" /> Reset link
+                  </button>
+                  <button
+                    class="btn btn-ghost btn-xs rounded-full text-error"
+                    (click)="removeUser(em)"
+                  >
+                    <app-icon name="trash" [size]="14" /> Remove manager
+                  </button>
+                }
+              </div>
+            </div>
+          </div>
+        } @empty {
+          <p class="rounded-box bg-base-200 p-4 text-sm opacity-70">No engineering managers yet.</p>
+        }
+      </div>
+    </section>
+  }
+</div>
+
+<!-- Reset link -->
+<dialog class="modal modal-bottom sm:modal-middle" #linkDialog>
+  <div class="modal-box flex flex-col gap-3">
+    <h3 class="text-xl font-bold">Password reset link</h3>
+    @if (link(); as l) {
+      <p class="text-sm opacity-70">
+        Send this one-time link to {{ l.name }}. It expires {{ l.expiresAt }}.
+        @if (l.emailed) {
+          It was also e-mailed to them.
+        }
+      </p>
+      <div class="join w-full">
+        <input
+          class="input input-sm join-item w-full rounded-l-full font-mono text-xs"
+          [value]="l.url"
+          readonly
+          aria-label="Reset link"
+        />
+        <app-copy-button [value]="l.url" what="link" />
+      </div>
+    }
+    <div class="modal-action">
+      <button class="btn btn-primary rounded-full" (click)="linkDialog.close()">Done</button>
+    </div>
+  </div>
+  <form method="dialog" class="modal-backdrop"><button>close</button></form>
+</dialog>
+
+<!-- Add person -->
+<dialog class="modal modal-bottom sm:modal-middle" #dialog>
+  <form class="modal-box" (submit)="save($event)" novalidate>
+    <h3 class="text-xl font-bold">{{ dialogTitle() }}</h3>
+    @if (draft()?.parentName) {
+      <p class="mb-2 text-sm opacity-60">Reports to {{ draft()?.parentName }}</p>
+    }
+    <app-field label="Full name" [field]="pf.name">
+      <input
+        class="input w-full"
+        placeholder="Full name"
+        [class.input-error]="invalid(pf.name)"
+        [formField]="pf.name"
+      />
+    </app-field>
+    <app-field label="E-mail" [field]="pf.email" [optional]="isMember()">
+      <input
+        class="input w-full"
+        type="email"
+        placeholder="name@cadence.local"
+        [class.input-error]="invalid(pf.email)"
+        [formField]="pf.email"
+      />
+    </app-field>
+    @if (draft()?.kind === 'TRIBE_LEAD') {
+      <app-field label="Tribe name" [optional]="true">
+        <input class="input w-full" placeholder="e.g. Retail" [formField]="pf.tribeName" />
+      </app-field>
+    }
+    @if (isMember()) {
+      <app-field label="Title" [optional]="true">
+        <input class="input w-full" placeholder="e.g. Senior Engineer" [formField]="pf.title" />
+      </app-field>
+    } @else {
+      <app-field
+        label="Initial password"
+        [field]="pf.password"
+        hint="Share it securely; they can sign in right away or you can send a reset link."
+      >
+        <input
+          class="input w-full"
+          type="password"
+          placeholder="At least 12 characters"
+          autocomplete="new-password"
+          [class.input-error]="invalid(pf.password)"
+          [formField]="pf.password"
+        />
+      </app-field>
+    }
+    <div class="modal-action">
+      <button type="button" class="btn btn-ghost rounded-full" (click)="close()">Cancel</button>
+      <button class="btn btn-primary rounded-full" [disabled]="pf().submitting()">Save</button>
+    </div>
+  </form>
+  <form method="dialog" class="modal-backdrop"><button>close</button></form>
+</dialog>

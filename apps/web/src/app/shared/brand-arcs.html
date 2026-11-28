@@ -1,0 +1,19 @@
+<svg
+  class="absolute top-1/2 -translate-y-1/2"
+  [style.width.px]="size()"
+  [style.height.px]="size()"
+  [style.right.px]="-size() * 0.28"
+  viewBox="0 0 400 400"
+  fill="none"
+>
+  @for (r of radii; track r) {
+    <path
+      [attr.d]="arc(r)"
+      stroke="white"
+      [attr.stroke-opacity]="0.06 + r / 3000"
+      stroke-width="16"
+      stroke-linecap="round"
+    />
+  }
+  <circle cx="318" cy="82" r="10" fill="#f3d38d" fill-opacity=".6" />
+</svg>

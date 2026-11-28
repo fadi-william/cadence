@@ -1,0 +1,352 @@
+<app-page-header
+  heading="Integrations"
+  eyebrow="Administration"
+  subtitle="Work items from Jira or Azure Boards · code, reviews and deployments from Azure DevOps"
+/>
+
+<!-- Connect tiles -->
+<div class="mb-6 grid gap-4 md:grid-cols-2">
+  @for (p of providers(); track p.provider) {
+    <button
+      class="surface surface-interactive group flex items-center gap-4 p-5 text-left"
+      (click)="openCreate(p)"
+    >
+      <div class="icon-bubble size-14 bg-base-200">
+        <app-provider-icon [provider]="p.provider" [size]="28" />
+      </div>
+      <div class="min-w-0 flex-1">
+        <div class="text-lg font-bold">Connect {{ p.label }}</div>
+        <div class="text-sm opacity-60">{{ kinds(p) }}</div>
+      </div>
+      <span class="btn btn-circle btn-primary btn-sm transition group-hover:scale-110"
+        ><app-icon name="plus" [size]="16"
+      /></span>
+    </button>
+  }
+</div>
+
+<h2 class="mb-3 text-lg font-bold">Connections</h2>
+<div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+  @for (c of connections(); track c.id) {
+    <article class="surface flex flex-col gap-4 p-5">
+      <div class="flex items-start gap-3">
+        <div class="icon-bubble bg-base-200">
+          <app-provider-icon [provider]="c.provider" [size]="22" />
+        </div>
+        <div class="min-w-0 flex-1">
+          <h3 class="truncate font-bold">{{ c.name }}</h3>
+          <p class="truncate text-xs opacity-60">{{ c.baseUrl }}</p>
+        </div>
+        <input
+          type="checkbox"
+          class="toggle toggle-success toggle-sm"
+          [checked]="c.enabled"
+          (change)="toggle(c)"
+          [attr.aria-label]="'Enable ' + c.name"
+        />
+      </div>
+
+      <div class="flex flex-wrap gap-1.5">
+        @for (cap of describe(c.provider)?.capabilities ?? []; track cap) {
+          @if (c.features.includes(cap)) {
+            <span class="badge badge-ghost badge-sm rounded-full">{{ kindLabels[cap] }}</span>
+          } @else {
+            <span
+              class="badge badge-ghost badge-sm rounded-full line-through opacity-50"
+              [title]="kindLabels[cap] + ' is turned off'"
+              >{{ kindLabels[cap] }}</span
+            >
+          }
+        }
+        @if (c.webhookConfigured) {
+          <span class="badge badge-success badge-soft badge-sm gap-1 rounded-full"
+            ><app-icon name="webhook" [size]="11" /> Webhook</span
+          >
+        }
+      </div>
+
+      <div class="rounded-box bg-base-200 p-3 text-xs">
+        @if (lastRun(c); as s) {
+          <div class="flex items-center gap-2">
+            @if (active(s)) {
+              <span class="loading loading-spinner loading-xs text-primary"></span>
+            } @else {
+              <span
+                class="status"
+                [class.status-success]="s.status === 'SUCCESS'"
+                [class.status-error]="s.status === 'FAILED'"
+              ></span>
+            }
+            <span class="font-semibold">{{ statusLabel(s) }}</span>
+            <span class="badge badge-ghost badge-xs rounded-full">{{ s.trigger }}</span>
+            <span class="ml-auto opacity-60">{{ s.startedAt | date: 'MMM d, HH:mm' }}</span>
+          </div>
+          <div class="mt-1 opacity-70">
+            {{ s.rangeFrom }} → {{ s.rangeTo }} · {{ s.recordsWritten }} rows
+          </div>
+          @if (s.error) {
+            <div class="mt-1 line-clamp-2 text-error" [title]="s.error">{{ s.error }}</div>
+          }
+        } @else {
+          <span class="opacity-60">Never synced</span>
+        }
+      </div>
+
+      <div class="mt-auto flex flex-wrap items-center gap-1">
+        <button
+          class="btn btn-primary btn-sm rounded-full"
+          (click)="sync(c)"
+          [disabled]="isSyncing(c)"
+        >
+          <app-icon name="refresh" [size]="14" /> Sync 14 days
+        </button>
+        <button
+          class="btn btn-ghost btn-sm rounded-full"
+          (click)="test(c)"
+          [disabled]="pending() === c.id"
+        >
+          @if (pending() === c.id) {
+            <span class="loading loading-spinner loading-xs"></span>
+          } @else {
+            <app-icon name="check" [size]="14" />
+          }
+          Test
+        </button>
+        <div class="ml-auto flex">
+          <button class="btn btn-circle btn-ghost btn-sm" (click)="openWebhook(c)" title="Webhook">
+            <app-icon name="webhook" [size]="15" />
+          </button>
+          <button class="btn btn-circle btn-ghost btn-sm" (click)="openEdit(c)" title="Edit">
+            <app-icon name="edit" [size]="15" />
+          </button>
+          <button
+            class="btn btn-circle btn-ghost btn-sm text-error"
+            (click)="remove(c)"
+            title="Delete"
+          >
+            <app-icon name="trash" [size]="15" />
+          </button>
+        </div>
+      </div>
+    </article>
+  } @empty {
+    <div class="surface col-span-full p-8 text-center text-sm opacity-70">
+      No connections yet. Connect Azure DevOps and Jira above to start merging activity per person.
+    </div>
+  }
+</div>
+
+<!-- Create / edit (Signal Forms, fields generated from the adapter's descriptor) -->
+<dialog class="modal modal-bottom sm:modal-middle" #dialog>
+  @if (provider(); as p) {
+    <form class="modal-box max-w-xl" (submit)="save($event)" novalidate>
+      <div class="mb-3 flex items-center gap-3">
+        <div class="icon-bubble bg-base-200">
+          <app-provider-icon [provider]="p.provider" [size]="22" />
+        </div>
+        <h3 class="text-xl font-bold">{{ editing() ? 'Edit' : 'Connect' }} {{ p.label }}</h3>
+      </div>
+      <app-field label="Name" [field]="cf.name">
+        <input
+          class="input w-full"
+          placeholder="Name"
+          [class.input-error]="invalid(cf.name)"
+          [formField]="cf.name"
+        />
+      </app-field>
+      <app-field label="Base URL" [field]="cf.baseUrl" [hint]="p.baseUrlHint">
+        <input
+          class="input w-full"
+          type="url"
+          [placeholder]="p.baseUrlHint"
+          [class.input-error]="invalid(cf.baseUrl)"
+          [formField]="cf.baseUrl"
+        />
+      </app-field>
+      @for (f of p.configFields; track f.key) {
+        <app-field [label]="f.label" [hint]="f.help" [optional]="!f.required">
+          @if (f.type === 'select') {
+            <select class="select w-full" [formField]="cf.config[f.key]">
+              @for (o of f.options ?? []; track o.value) {
+                <option [value]="o.value">{{ o.label }}</option>
+              }
+            </select>
+          } @else {
+            <input
+              class="input w-full"
+              [placeholder]="f.placeholder || f.label"
+              [formField]="cf.config[f.key]"
+            />
+          }
+        </app-field>
+      }
+      @if (cf.config().errors()[0]; as err) {
+        <p class="text-sm text-error">{{ err.message }}</p>
+      }
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Features</legend>
+        @for (k of p.capabilities; track k) {
+          <label class="flex cursor-pointer items-start gap-3 py-1">
+            <input
+              type="checkbox"
+              class="checkbox checkbox-sm mt-0.5"
+              [checked]="features().includes(k)"
+              (change)="setFeature(k, $any($event.target).checked)"
+            />
+            <span>
+              <span class="font-semibold">{{ kindLabels[k] }}</span>
+              <span class="block text-xs opacity-60">{{ kindHints[k] }}</span>
+            </span>
+          </label>
+          @if (turnedOff().includes(k)) {
+            <div
+              class="rounded-box bg-base-200 mb-1 ml-8 flex flex-col gap-1 p-3 text-sm"
+              role="radiogroup"
+              [attr.aria-label]="'What to do with the ' + kindLabels[k] + ' data'"
+            >
+              <label class="flex cursor-pointer items-center gap-2">
+                <input
+                  type="radio"
+                  class="radio radio-xs"
+                  [name]="'data-' + k"
+                  [checked]="!removeData().includes(k)"
+                  (change)="setRemoveData(k, false)"
+                />
+                Keep its history (stays in dashboards, no longer updated)
+              </label>
+              <label class="flex cursor-pointer items-center gap-2">
+                <input
+                  type="radio"
+                  class="radio radio-xs"
+                  [name]="'data-' + k"
+                  [checked]="removeData().includes(k)"
+                  (change)="setRemoveData(k, true)"
+                />
+                Remove its data
+              </label>
+            </div>
+          }
+        }
+        @if (noFeatures()) {
+          <p class="text-sm text-error">
+            Turn on at least one feature, or disable the connection instead.
+          </p>
+        }
+      </fieldset>
+      <app-field
+        [label]="p.secretLabel"
+        [field]="cf.secret"
+        [hint]="editing() ? 'Leave empty to keep the stored secret.' : p.secretHelp"
+      >
+        <label class="input w-full" [class.input-error]="invalid(cf.secret)">
+          <app-icon name="key" [size]="15" class="opacity-50" />
+          <input
+            type="password"
+            autocomplete="off"
+            [placeholder]="p.secretLabel"
+            [formField]="cf.secret"
+          />
+        </label>
+      </app-field>
+      <div class="modal-action">
+        <button type="button" class="btn btn-ghost rounded-full" (click)="dialog.close()">
+          Cancel
+        </button>
+        <button class="btn btn-primary rounded-full" [disabled]="cf().submitting()">Save</button>
+      </div>
+    </form>
+  }
+  <form method="dialog" class="modal-backdrop"><button>close</button></form>
+</dialog>
+
+<!-- Webhook -->
+<dialog class="modal modal-bottom sm:modal-middle" #webhookDialog>
+  <div class="modal-box flex max-w-xl flex-col gap-4">
+    <h3 class="text-xl font-bold">Webhook · {{ webhookFor()?.name }}</h3>
+    <p class="text-sm opacity-70">
+      Webhooks make Cadence re-sync the affected days within about a minute of activity, instead of
+      waiting for the nightly sync.
+    </p>
+    @if (webhook(); as w) {
+      <app-field label="Payload URL">
+        <div class="join w-full">
+          <input
+            class="input input-sm join-item w-full rounded-l-full font-mono text-xs"
+            [value]="w.url"
+            readonly
+            aria-label="Webhook URL"
+          />
+          <app-copy-button [value]="w.url" what="URL" />
+        </div>
+      </app-field>
+      @if (w.secret) {
+        <div
+          role="alert"
+          class="flex flex-col gap-2 rounded-box border border-warning/50 bg-warning/10 p-3 text-sm"
+        >
+          <span class="font-semibold">Copy this secret now. It won’t be shown again.</span>
+          <div class="join w-full">
+            <input
+              class="input input-sm join-item w-full rounded-l-full font-mono text-xs"
+              [value]="w.secret"
+              readonly
+              aria-label="Webhook secret"
+            />
+            <app-copy-button [value]="w.secret" what="secret" />
+          </div>
+        </div>
+      }
+      <div class="flex items-center gap-2 text-sm">
+        <span
+          class="status"
+          [class.status-success]="w.configured"
+          [class.status-neutral]="!w.configured"
+        ></span>
+        {{ w.configured ? 'Enabled' : 'Not enabled' }}
+      </div>
+      @if (describe(webhookFor()!.provider)?.webhookInstructions; as how) {
+        <div class="rounded-box bg-base-200 p-3 text-xs leading-relaxed">
+          <span class="font-semibold">Setup: </span>{{ how }}
+        </div>
+      }
+      <details class="collapse collapse-arrow rounded-box border border-base-300">
+        <summary class="collapse-title text-sm font-medium">
+          Use a secret issued by the platform
+        </summary>
+        <div class="collapse-content">
+          <div class="join w-full">
+            <input
+              class="input input-sm join-item w-full rounded-l-full"
+              type="password"
+              placeholder="Signing secret"
+              [value]="providerSecret()"
+              (input)="providerSecret.set($any($event.target).value)"
+              aria-label="Platform signing secret"
+            />
+            <button
+              class="btn btn-sm join-item rounded-r-full"
+              (click)="setSecret(providerSecret())"
+              [disabled]="providerSecret().length < 8"
+            >
+              Save
+            </button>
+          </div>
+        </div>
+      </details>
+      <div class="modal-action">
+        @if (w.configured) {
+          <button class="btn btn-ghost rounded-full text-error" (click)="disableWebhook()">
+            Disable
+          </button>
+        }
+        <button class="btn btn-primary rounded-full" (click)="setSecret()">
+          {{ w.configured ? 'Rotate secret' : 'Generate secret' }}
+        </button>
+        <button class="btn rounded-full" (click)="webhookDialog.close()">Close</button>
+      </div>
+    } @else {
+      <div class="skeleton h-24 w-full rounded-box"></div>
+    }
+  </div>
+  <form method="dialog" class="modal-backdrop"><button>close</button></form>
+</dialog>
